@@ -1,0 +1,1109 @@
+{
+	"info": {
+		"name": "Japoke API",
+		"description": "API para Japoke - Dark Kitchen de Poke Bowls.\n\nFlujo de prueba:\n1. GET Catalog para obtener IDs reales\n2. POST Order con esos IDs\n3. Admin: gestionar pedidos y catálogo\n4. Dashboard: ver ventas, populares y costos\n5. Inventory: gestionar stock, compras e insumos\n6. WhatsApp: ver estado y toggle de notificaciones",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:4000/api"
+		},
+		{
+			"key": "pokeTypePremiumId",
+			"value": ""
+		},
+		{
+			"key": "pokeTypeBaseId",
+			"value": ""
+		},
+		{
+			"key": "salmonId",
+			"value": ""
+		},
+		{
+			"key": "kaniId",
+			"value": ""
+		},
+		{
+			"key": "atunId",
+			"value": ""
+		},
+		{
+			"key": "arrozId",
+			"value": ""
+		},
+		{
+			"key": "quinoaId",
+			"value": ""
+		},
+		{
+			"key": "zanahoriaId",
+			"value": ""
+		},
+		{
+			"key": "aguacateId",
+			"value": ""
+		},
+		{
+			"key": "cebollaId",
+			"value": ""
+		},
+		{
+			"key": "cebollinId",
+			"value": ""
+		},
+		{
+			"key": "rabanosId",
+			"value": ""
+		},
+		{
+			"key": "fujiId",
+			"value": ""
+		},
+		{
+			"key": "teriyakiId",
+			"value": ""
+		},
+		{
+			"key": "maizInfladoId",
+			"value": ""
+		},
+		{
+			"key": "orderId",
+			"value": ""
+		},
+		{
+			"key": "orderNumber",
+			"value": ""
+		},
+		{
+			"key": "categoryId",
+			"value": ""
+		},
+		{
+			"key": "itemId",
+			"value": ""
+		},
+		{
+			"key": "pokeTypeId",
+			"value": ""
+		},
+		{
+			"key": "supplyId",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:4000/health",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "4000",
+							"path": ["health"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Catalog (Público)",
+			"item": [
+				{
+					"name": "Get Full Catalog",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.success) {",
+									"    // Poke Types",
+									"    const pokeTypes = res.data.pokeTypes;",
+									"    for (const pt of pokeTypes) {",
+									"        if (pt.slug === 'premium') pm.collectionVariables.set('pokeTypePremiumId', pt._id);",
+									"        if (pt.slug === 'base') pm.collectionVariables.set('pokeTypeBaseId', pt._id);",
+									"    }",
+									"    // Items from categories",
+									"    for (const cat of res.data.categories) {",
+									"        for (const item of cat.items) {",
+									"            const map = {",
+									"                'salmon': 'salmonId',",
+									"                'kani': 'kaniId',",
+									"                'atun': 'atunId',",
+									"                'arroz': 'arrozId',",
+									"                'quinoa': 'quinoaId',",
+									"                'zanahoria': 'zanahoriaId',",
+									"                'aguacate': 'aguacateId',",
+									"                'cebolla': 'cebollaId',",
+									"                'cebollin': 'cebollinId',",
+									"                'rabanos': 'rabanosId',",
+									"                'fuji': 'fujiId',",
+									"                'teriyaki': 'teriyakiId',",
+									"                'maiz-inflado': 'maizInfladoId'",
+									"            };",
+									"            if (map[item.slug]) {",
+									"                pm.collectionVariables.set(map[item.slug], item._id);",
+									"            }",
+									"        }",
+									"    }",
+									"    console.log('Variables set from catalog');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/catalog",
+							"host": ["{{baseUrl}}"],
+							"path": ["catalog"]
+						}
+					}
+				},
+				{
+					"name": "Get Poke Types",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/catalog/poke-types",
+							"host": ["{{baseUrl}}"],
+							"path": ["catalog", "poke-types"]
+						}
+					}
+				},
+				{
+					"name": "Get Categories with Items",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/catalog/categories",
+							"host": ["{{baseUrl}}"],
+							"path": ["catalog", "categories"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Orders (Público)",
+			"item": [
+				{
+					"name": "Create Order - Premium Salmón+Kani 50/50 + Extra Aguacate (13€)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.success) {",
+									"    pm.collectionVariables.set('orderId', res.data._id);",
+									"    pm.collectionVariables.set('orderNumber', res.data.orderNumber);",
+									"    console.log('Order created:', res.data.orderNumber, 'Total:', res.data.total);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"customer\": {\n        \"name\": \"José Vivas\",\n        \"identification\": \"V-12345678\",\n        \"email\": \"jose@japoke.com\",\n        \"phone\": \"+58 412 1234567\",\n        \"address\": \"Calle Principal 123, Caracas\",\n        \"notes\": \"Sin cebolla por favor\"\n    },\n    \"items\": [\n        {\n            \"pokeType\": \"{{pokeTypePremiumId}}\",\n            \"selections\": {\n                \"proteins\": [\n                    { \"item\": \"{{salmonId}}\", \"quantity\": 50 },\n                    { \"item\": \"{{kaniId}}\", \"quantity\": 50 }\n                ],\n                \"bases\": [\n                    { \"item\": \"{{arrozId}}\", \"quantity\": 120 }\n                ],\n                \"vegetables\": [\n                    { \"item\": \"{{zanahoriaId}}\" },\n                    { \"item\": \"{{cebollaId}}\" },\n                    { \"item\": \"{{cebollinId}}\" },\n                    { \"item\": \"{{rabanosId}}\" }\n                ],\n                \"sauces\": [\n                    { \"item\": \"{{fujiId}}\" },\n                    { \"item\": \"{{teriyakiId}}\" }\n                ],\n                \"toppings\": [\n                    { \"item\": \"{{maizInfladoId}}\" }\n                ]\n            },\n            \"extras\": [\n                { \"item\": \"{{aguacateId}}\", \"quantity\": 1 }\n            ]\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/orders",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders"]
+						}
+					}
+				},
+				{
+					"name": "Create Order - Base Atún (9€)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"customer\": {\n        \"name\": \"María García\",\n        \"identification\": \"V-87654321\",\n        \"email\": \"maria@example.com\",\n        \"phone\": \"+58 414 7654321\",\n        \"address\": \"Av. Libertador 456, Caracas\"\n    },\n    \"items\": [\n        {\n            \"pokeType\": \"{{pokeTypeBaseId}}\",\n            \"selections\": {\n                \"proteins\": [\n                    { \"item\": \"{{atunId}}\", \"quantity\": 100 }\n                ],\n                \"bases\": [\n                    { \"item\": \"{{arrozId}}\", \"quantity\": 60 },\n                    { \"item\": \"{{quinoaId}}\", \"quantity\": 60 }\n                ],\n                \"vegetables\": [\n                    { \"item\": \"{{zanahoriaId}}\" },\n                    { \"item\": \"{{aguacateId}}\" }\n                ],\n                \"sauces\": [\n                    { \"item\": \"{{fujiId}}\" }\n                ],\n                \"toppings\": [\n                    { \"item\": \"{{maizInfladoId}}\" }\n                ]\n            },\n            \"extras\": []\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/orders",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders"]
+						}
+					}
+				},
+				{
+					"name": "FAIL - 5 Vegetales (debe rechazar)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"customer\": {\n        \"name\": \"Test User\",\n        \"identification\": \"V-11111111\",\n        \"email\": \"test@test.com\",\n        \"phone\": \"+58 412 0000000\",\n        \"address\": \"Test Address 123\"\n    },\n    \"items\": [\n        {\n            \"pokeType\": \"{{pokeTypePremiumId}}\",\n            \"selections\": {\n                \"proteins\": [\n                    { \"item\": \"{{salmonId}}\", \"quantity\": 100 }\n                ],\n                \"bases\": [\n                    { \"item\": \"{{arrozId}}\", \"quantity\": 120 }\n                ],\n                \"vegetables\": [\n                    { \"item\": \"{{zanahoriaId}}\" },\n                    { \"item\": \"{{aguacateId}}\" },\n                    { \"item\": \"{{cebollaId}}\" },\n                    { \"item\": \"{{cebollinId}}\" },\n                    { \"item\": \"{{rabanosId}}\" }\n                ],\n                \"sauces\": [\n                    { \"item\": \"{{fujiId}}\" }\n                ],\n                \"toppings\": []\n            },\n            \"extras\": []\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/orders",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders"]
+						}
+					}
+				},
+				{
+					"name": "FAIL - Salmón en Poke Base (debe rechazar)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"customer\": {\n        \"name\": \"Test User\",\n        \"identification\": \"V-11111111\",\n        \"email\": \"test@test.com\",\n        \"phone\": \"+58 412 0000000\",\n        \"address\": \"Test Address 123\"\n    },\n    \"items\": [\n        {\n            \"pokeType\": \"{{pokeTypeBaseId}}\",\n            \"selections\": {\n                \"proteins\": [\n                    { \"item\": \"{{salmonId}}\", \"quantity\": 100 }\n                ],\n                \"bases\": [\n                    { \"item\": \"{{arrozId}}\", \"quantity\": 120 }\n                ],\n                \"vegetables\": [\n                    { \"item\": \"{{zanahoriaId}}\" }\n                ],\n                \"sauces\": [\n                    { \"item\": \"{{fujiId}}\" }\n                ],\n                \"toppings\": []\n            },\n            \"extras\": []\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/orders",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders"]
+						}
+					}
+				},
+				{
+					"name": "Get Order by Order Number",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{orderNumber}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders", "{{orderNumber}}"]
+						}
+					}
+				},
+				{
+					"name": "Get Order by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{orderId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders", "{{orderId}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin - Orders",
+			"item": [
+				{
+					"name": "List All Orders",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/orders",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "orders"]
+						}
+					}
+				},
+				{
+					"name": "List Orders by Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/orders?status=pending",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "orders"],
+							"query": [
+								{
+									"key": "status",
+									"value": "pending"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "List Orders with Pagination",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/orders?page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "orders"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Order Status → confirmed",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"confirmed\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/orders/{{orderId}}/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "orders", "{{orderId}}", "status"]
+						}
+					}
+				},
+				{
+					"name": "Update Order Status → preparing",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"preparing\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/orders/{{orderId}}/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "orders", "{{orderId}}", "status"]
+						}
+					}
+				},
+				{
+					"name": "Update Order Status → ready",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"ready\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/orders/{{orderId}}/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "orders", "{{orderId}}", "status"]
+						}
+					}
+				},
+				{
+					"name": "Update Order Status → delivered",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"delivered\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/orders/{{orderId}}/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "orders", "{{orderId}}", "status"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin - Categories",
+			"item": [
+				{
+					"name": "List Categories",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.success && res.data.length > 0) {",
+									"    pm.collectionVariables.set('categoryId', res.data[0]._id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/categories",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "categories"]
+						}
+					}
+				},
+				{
+					"name": "Create Category",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Bebidas\",\n    \"slug\": \"bebidas\",\n    \"type\": \"topping\",\n    \"displayOrder\": 7\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/categories",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "categories"]
+						}
+					}
+				},
+				{
+					"name": "Update Category",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"displayOrder\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/categories/{{categoryId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "categories", "{{categoryId}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin - Items",
+			"item": [
+				{
+					"name": "List All Items",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.success && res.data.length > 0) {",
+									"    pm.collectionVariables.set('itemId', res.data[0]._id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/items",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "items"]
+						}
+					}
+				},
+				{
+					"name": "List Items by Category",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/items?category={{categoryId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "items"],
+							"query": [
+								{
+									"key": "category",
+									"value": "{{categoryId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Item",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Pulpo\",\n    \"slug\": \"pulpo\",\n    \"category\": \"{{categoryId}}\",\n    \"tier\": \"premium\",\n    \"portionSize\": 100,\n    \"extraPrice\": 6,\n    \"displayOrder\": 4\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/items",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "items"]
+						}
+					}
+				},
+				{
+					"name": "Update Item (toggle availability)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"isAvailable\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/items/{{itemId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "items", "{{itemId}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin - Poke Types",
+			"item": [
+				{
+					"name": "List Poke Types",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.success && res.data.length > 0) {",
+									"    pm.collectionVariables.set('pokeTypeId', res.data[0]._id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/poke-types",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "poke-types"]
+						}
+					}
+				},
+				{
+					"name": "Create Poke Type",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Kids\",\n    \"slug\": \"kids\",\n    \"basePrice\": 6,\n    \"rules\": {\n        \"proteinGrams\": 50,\n        \"baseGrams\": 80,\n        \"maxVegetables\": 2,\n        \"maxSauces\": 1,\n        \"maxToppings\": 1\n    },\n    \"allowedProteinTiers\": [\"base\"]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/poke-types",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "poke-types"]
+						}
+					}
+				},
+				{
+					"name": "Update Poke Type (change max vegetables)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"rules\": {\n        \"proteinGrams\": 100,\n        \"baseGrams\": 120,\n        \"maxVegetables\": 5,\n        \"maxSauces\": 2,\n        \"maxToppings\": 1\n    }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/poke-types/{{pokeTypeId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "poke-types", "{{pokeTypeId}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin - Dashboard",
+			"item": [
+				{
+					"name": "Dashboard Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/dashboard/summary",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "dashboard", "summary"]
+						}
+					}
+				},
+				{
+					"name": "Sales by Day (last 30 days)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/dashboard/sales?groupBy=day",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "dashboard", "sales"],
+							"query": [
+								{
+									"key": "groupBy",
+									"value": "day"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Sales by Week",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/dashboard/sales?groupBy=week",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "dashboard", "sales"],
+							"query": [
+								{
+									"key": "groupBy",
+									"value": "week"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Sales by Month",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/dashboard/sales?groupBy=month",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "dashboard", "sales"],
+							"query": [
+								{
+									"key": "groupBy",
+									"value": "month"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Popular Items (Top 10)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/dashboard/popular-items?limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "dashboard", "popular-items"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Popular Poke Types",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/dashboard/popular-poke-types",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "dashboard", "popular-poke-types"]
+						}
+					}
+				},
+				{
+					"name": "Cost Analysis by Menu",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/dashboard/cost-analysis",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "dashboard", "cost-analysis"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin - Inventory",
+			"item": [
+				{
+					"name": "Get Inventory Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/inventory",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "inventory"]
+						}
+					}
+				},
+				{
+					"name": "Get Stock Alerts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/inventory/alerts",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "inventory", "alerts"]
+						}
+					}
+				},
+				{
+					"name": "Get Stock Movements",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/inventory/movements?page=1&limit=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "inventory", "movements"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Record Purchase (Salmon 2kg)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refModel\": \"Item\",\n    \"refId\": \"{{salmonId}}\",\n    \"quantity\": 2000,\n    \"unitCost\": 0.025,\n    \"notes\": \"Compra semanal de salmon fresco\",\n    \"updateCost\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/inventory/purchase",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "inventory", "purchase"]
+						}
+					}
+				},
+				{
+					"name": "Record Purchase (Supply - Envases)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refModel\": \"Supply\",\n    \"refId\": \"{{supplyId}}\",\n    \"quantity\": 100,\n    \"unitCost\": 0.35,\n    \"notes\": \"Compra de envases desechables\",\n    \"updateCost\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/inventory/purchase",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "inventory", "purchase"]
+						}
+					}
+				},
+				{
+					"name": "Manual Stock Adjustment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refModel\": \"Item\",\n    \"refId\": \"{{salmonId}}\",\n    \"newStock\": 1500,\n    \"reason\": \"manual_adjustment\",\n    \"notes\": \"Ajuste despues de inventario fisico\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/inventory/adjustment",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "inventory", "adjustment"]
+						}
+					}
+				},
+				{
+					"name": "Stock Adjustment - Waste",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refModel\": \"Item\",\n    \"refId\": \"{{salmonId}}\",\n    \"newStock\": 1400,\n    \"reason\": \"waste\",\n    \"notes\": \"Salmon en mal estado - descartado\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/inventory/adjustment",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "inventory", "adjustment"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin - Supplies",
+			"item": [
+				{
+					"name": "List Supplies",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.success && res.data.length > 0) {",
+									"    pm.collectionVariables.set('supplyId', res.data[0]._id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/inventory/supplies",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "inventory", "supplies"]
+						}
+					}
+				},
+				{
+					"name": "Create Supply",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Bolsa Delivery\",\n    \"slug\": \"bolsa-delivery\",\n    \"description\": \"Bolsa de papel para delivery\",\n    \"unitCost\": 0.08,\n    \"currentStock\": 150,\n    \"minStock\": 30,\n    \"trackingUnit\": \"units\",\n    \"usagePerPoke\": 0.5\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/inventory/supplies",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "inventory", "supplies"]
+						}
+					}
+				},
+				{
+					"name": "Update Supply",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"unitCost\": 0.40,\n    \"minStock\": 60\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/inventory/supplies/{{supplyId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "inventory", "supplies", "{{supplyId}}"]
+						}
+					}
+				},
+				{
+					"name": "Toggle Supply Active",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"isActive\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/inventory/supplies/{{supplyId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "inventory", "supplies", "{{supplyId}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin - WhatsApp",
+			"item": [
+				{
+					"name": "WhatsApp Status",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/admin/whatsapp/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "whatsapp", "status"]
+						}
+					}
+				},
+				{
+					"name": "Toggle WhatsApp (Enable)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"enabled\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/whatsapp/toggle",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "whatsapp", "toggle"]
+						}
+					}
+				},
+				{
+					"name": "Toggle WhatsApp (Disable)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"enabled\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/whatsapp/toggle",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "whatsapp", "toggle"]
+						}
+					}
+				}
+			]
+		}
+	]
+}

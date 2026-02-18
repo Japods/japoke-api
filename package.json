@@ -1,0 +1,23 @@
+{
+  "name": "japoke-api",
+  "version": "1.0.0",
+  "description": "Backend API for Japoke - Dark Kitchen de Poke Bowls",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node scripts/seed.js"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "joi": "^18.0.2",
+    "mongoose": "^9.2.1",
+    "morgan": "^1.10.1",
+    "node-cron": "^4.2.1"
+  }
+}
