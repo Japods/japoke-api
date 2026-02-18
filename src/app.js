@@ -7,7 +7,28 @@ import { AppError } from './utils/app-error.js';
 
 const app = express();
 
-app.use(cors());
+const ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'https://japoke-frontend.onrender.com',
+  'https://japoke-admin.onrender.com',
+  'https://www.japokebowl.com',
+  'https://japokebowl.com',
+  'https://admin.japokebowl.com',
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS: origin ${origin} not allowed`));
+      }
+    },
+    credentials: true,
+  })
+);
 app.use(morgan('dev'));
 app.use(express.json());
 
