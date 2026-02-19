@@ -125,7 +125,7 @@ async function seed() {
       basePrice: 12,
       rules: {
         proteinGrams: 100,
-        baseGrams: 120,
+        baseGrams: 100,
         maxVegetables: 4,
         maxSauces: 2,
         maxToppings: 1,
@@ -144,7 +144,7 @@ async function seed() {
       basePrice: 9,
       rules: {
         proteinGrams: 100,
-        baseGrams: 120,
+        baseGrams: 100,
         maxVegetables: 4,
         maxSauces: 2,
         maxToppings: 1,
