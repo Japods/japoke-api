@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as adminCtrl from '../controllers/admin.controller.js';
+import { deleteOrder } from '../controllers/order.controller.js';
 import { validate } from '../middleware/validate.js';
 import {
   createCategorySchema,
@@ -17,6 +18,7 @@ const router = Router();
 router.get('/orders', adminCtrl.getOrders);
 router.patch('/orders/:id/status', validate(updateOrderStatusSchema), adminCtrl.updateOrderStatus);
 router.patch('/orders/:id/payment', adminCtrl.updatePaymentStatus);
+router.delete('/orders/:id', deleteOrder);
 
 // Categories
 router.get('/categories', adminCtrl.getCategories);

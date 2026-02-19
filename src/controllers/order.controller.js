@@ -11,3 +11,8 @@ export const getOrderById = asyncHandler(async (req, res) => {
   const order = await orderService.getOrderById(req.params.id);
   res.json({ success: true, data: order });
 });
+
+export const deleteOrder = asyncHandler(async (req, res) => {
+  await orderService.deleteOrder(req.params.id);
+  res.json({ success: true, message: 'Pedido eliminado y stock restaurado' });
+});

@@ -3,6 +3,7 @@ import { validatePokeItem } from './poke-builder.service.js';
 import { deductOrderStock } from './inventory.service.js';
 import { notifyStatusChange } from './whatsapp.service.js';
 import { getRatesSnapshot } from './exchangeRate.service.js';
+import { restoreOrderStock } from './inventory.service.js';
 import { AppError } from '../utils/app-error.js';
 
 const VALID_TRANSITIONS = {
@@ -68,6 +69,14 @@ export async function createOrder(customerData, items, paymentData = {}, deliver
   });
 
   return order;
+}
+
+export async function deleteOrder(orderId) {
+  const order = await Order.findById(orderId);
+  if (!order) throw new AppError('Pedido no encontrado', 404);
+
+  await restoreOrderStock(order);
+  await Order.findByIdAndDelete(orderId);
 }
 
 export async function updatePaymentStatus(orderId, paymentStatus) {

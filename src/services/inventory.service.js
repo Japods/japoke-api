@@ -173,6 +173,74 @@ export async function deductOrderStock(order) {
   return movements;
 }
 
+export async function restoreOrderStock(order) {
+  const allItemIds = [];
+  for (const poke of order.items) {
+    for (const p of poke.proteins) allItemIds.push(p.item.toString());
+    for (const b of poke.bases) allItemIds.push(b.item.toString());
+    for (const v of poke.vegetables) allItemIds.push(v.item.toString());
+    for (const s of poke.sauces) allItemIds.push(s.item.toString());
+    for (const t of poke.toppings) allItemIds.push(t.item.toString());
+  }
+
+  const items = await Item.find({ _id: { $in: allItemIds }, isTrackable: true });
+  const itemMap = {};
+  for (const item of items) itemMap[item._id.toString()] = item;
+
+  for (const poke of order.items) {
+    const restoreCategory = async (selections, useQuantityField = false) => {
+      for (const sel of selections) {
+        const item = itemMap[sel.item.toString()];
+        if (!item) continue;
+        const restoreAmount = useQuantityField && sel.quantity ? sel.quantity : item.portionSize || 0;
+        if (restoreAmount <= 0) continue;
+        const previousStock = item.currentStock;
+        item.currentStock = item.currentStock + restoreAmount;
+        await item.save();
+        await StockMovement.create({
+          refModel: 'Item',
+          refId: item._id,
+          type: 'adjustment',
+          quantity: restoreAmount,
+          previousStock,
+          newStock: item.currentStock,
+          order: order._id,
+          notes: `Reversa eliminación pedido ${order.orderNumber}`,
+          createdBy: 'system',
+        });
+      }
+    };
+
+    await restoreCategory(poke.proteins, true);
+    await restoreCategory(poke.bases, true);
+    await restoreCategory(poke.vegetables);
+    await restoreCategory(poke.sauces);
+    await restoreCategory(poke.toppings);
+
+    const pokeType = await PokeType.findById(poke.pokeType).lean();
+    if (pokeType?.supplies?.length) {
+      for (const s of pokeType.supplies) {
+        const supply = await Supply.findById(s.supply);
+        if (!supply) continue;
+        const previousStock = supply.currentStock;
+        supply.currentStock = supply.currentStock + s.quantity;
+        await supply.save();
+        await StockMovement.create({
+          refModel: 'Supply',
+          refId: supply._id,
+          type: 'adjustment',
+          quantity: s.quantity,
+          previousStock,
+          newStock: supply.currentStock,
+          order: order._id,
+          notes: `Reversa eliminación pedido ${order.orderNumber} - ${supply.name}`,
+          createdBy: 'system',
+        });
+      }
+    }
+  }
+}
+
 export async function getAlerts() {
   const [lowStockItems, lowStockSupplies] = await Promise.all([
     Item.find({
