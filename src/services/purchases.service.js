@@ -117,13 +117,23 @@ export async function getPurchaseById(id) {
 export async function createPurchase(data) {
   const { totalUSD, totalUSDT } = calcTotals(data.totalBS, data.bcvRate, data.usdtRate);
 
-  const compra = await Compra.create({ ...data, totalUSD, totalUSDT });
+  // Marcar líneas vinculadas como pendientes antes de guardar
+  const itemsWithFlag = (data.items || []).map((l) => ({
+    ...l,
+    stockUpdated: false,
+  }));
 
-  // Aplicar stock para cada linea vinculada
-  const linkedLines = (data.items || []).filter((l) => l.refModel && l.refId);
-  for (const line of linkedLines) {
-    await applyStockForItem(line, data.bcvRate);
+  const compra = await Compra.create({ ...data, items: itemsWithFlag, totalUSD, totalUSDT });
+
+  // Aplicar stock para cada linea vinculada y marcarla como actualizada
+  for (let i = 0; i < compra.items.length; i++) {
+    const line = compra.items[i];
+    if (line.refModel && line.refId && !line.stockUpdated) {
+      await applyStockForItem(line, data.bcvRate);
+      compra.items[i].stockUpdated = true;
+    }
   }
+  await compra.save();
 
   return compra;
 }
@@ -131,6 +141,12 @@ export async function createPurchase(data) {
 export async function updatePurchase(id, data) {
   const existing = await Compra.findById(id);
   if (!existing) return null;
+
+  // Detectar líneas recién vinculadas que aún no actualizaron stock
+  const previousItems = existing.items.reduce((acc, item) => {
+    if (item.refId) acc[item.refId.toString()] = item.stockUpdated;
+    return acc;
+  }, {});
 
   Object.assign(existing, data);
 
@@ -144,7 +160,22 @@ export async function updatePurchase(id, data) {
     existing.totalUSDT = totalUSDT;
   }
 
-  return existing.save();
+  await existing.save();
+
+  // Aplicar stock para líneas vinculadas que no lo tienen aplicado aún
+  const bcvRate = existing.bcvRate;
+  for (let i = 0; i < existing.items.length; i++) {
+    const line = existing.items[i];
+    if (!line.refModel || !line.refId) continue;
+    const alreadyUpdated = previousItems[line.refId.toString()] === true;
+    if (!alreadyUpdated && !line.stockUpdated) {
+      await applyStockForItem(line, bcvRate);
+      existing.items[i].stockUpdated = true;
+    }
+  }
+  await existing.save();
+
+  return existing;
 }
 
 export async function deletePurchase(id) {
