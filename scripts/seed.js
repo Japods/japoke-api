@@ -53,19 +53,24 @@ async function seed() {
   // --- Items ---
   const itemsData = [
     // Proteína Premium (trackable by grams)
-    { name: 'Salmón', category: catMap['protein-premium'], tier: 'premium', portionSize: 100, extraPrice: 5, costPerUnit: 0.025, isTrackable: true, trackingUnit: 'g', currentStock: 2000, minStock: 500, displayOrder: 1 },
-    { name: 'Camarones', category: catMap['protein-premium'], tier: 'premium', portionSize: 100, extraPrice: 5, costPerUnit: 0.018, isTrackable: true, trackingUnit: 'g', currentStock: 1500, minStock: 400, displayOrder: 2 },
-    { name: 'Kani', category: catMap['protein-premium'], tier: 'premium', portionSize: 100, extraPrice: 5, costPerUnit: 0.012, isTrackable: true, trackingUnit: 'g', currentStock: 1000, minStock: 300, displayOrder: 3 },
+    { name: 'Salmón', category: catMap['protein-premium'], tier: 'premium', portionSize: 100, extraPrice: 5, costPerUnit: 0.025, isTrackable: true, trackingUnit: 'g', currentStock: 0, minStock: 500, displayOrder: 1 },
+    { name: 'Camarones', category: catMap['protein-premium'], tier: 'premium', portionSize: 100, extraPrice: 5, costPerUnit: 0.018, isTrackable: true, trackingUnit: 'g', currentStock: 0, minStock: 400, displayOrder: 2 },
+    { name: 'Kani', category: catMap['protein-premium'], tier: 'premium', portionSize: 100, extraPrice: 5, costPerUnit: 0.012, isTrackable: true, trackingUnit: 'g', currentStock: 0, minStock: 300, displayOrder: 3 },
 
     // Proteína Base (trackable by grams)
-    { name: 'Atún', category: catMap['protein-base'], tier: 'base', portionSize: 100, extraPrice: 3, costPerUnit: 0.015, isTrackable: true, trackingUnit: 'g', currentStock: 1500, minStock: 400, displayOrder: 1 },
-    { name: 'Ceviche', category: catMap['protein-base'], tier: 'base', portionSize: 100, extraPrice: 3, costPerUnit: 0.012, isTrackable: true, trackingUnit: 'g', currentStock: 1000, minStock: 300, displayOrder: 2 },
-    { name: 'Pollo a la Plancha', category: catMap['protein-base'], tier: 'base', portionSize: 100, extraPrice: 3, costPerUnit: 0.008, isTrackable: true, trackingUnit: 'g', currentStock: 2000, minStock: 500, displayOrder: 3 },
-    { name: 'Pollo Crispie', category: catMap['protein-base'], tier: 'base', portionSize: 100, extraPrice: 3, costPerUnit: 0.009, isTrackable: true, trackingUnit: 'g', currentStock: 1500, minStock: 400, displayOrder: 4 },
+    { name: 'Atún', category: catMap['protein-base'], tier: 'base', portionSize: 100, extraPrice: 3, costPerUnit: 0.015, isTrackable: true, trackingUnit: 'g', currentStock: 0, minStock: 400, displayOrder: 1 },
+    { name: 'Ceviche', category: catMap['protein-base'], tier: 'base', portionSize: 100, extraPrice: 3, costPerUnit: 0.012, isTrackable: true, trackingUnit: 'g', currentStock: 0, minStock: 300, displayOrder: 2 },
+    {
+      name: 'Pollo', category: catMap['protein-base'], tier: 'base', portionSize: 100, extraPrice: 3, costPerUnit: 0.008, isTrackable: true, trackingUnit: 'g', currentStock: 0, minStock: 500, displayOrder: 3,
+      preparationStyles: [
+        { id: 'plancha', label: 'Pollo a la Plancha' },
+        { id: 'crispie', label: 'Pollo Crispie' },
+      ],
+    },
 
     // Bases (trackable by grams)
-    { name: 'Arroz', category: catMap['base'], tier: null, portionSize: 120, extraPrice: 0, costPerUnit: 0.002, isTrackable: true, trackingUnit: 'g', currentStock: 5000, minStock: 1000, displayOrder: 1 },
-    { name: 'Quinoa', category: catMap['base'], tier: null, portionSize: 120, extraPrice: 0, costPerUnit: 0.005, isTrackable: true, trackingUnit: 'g', currentStock: 3000, minStock: 600, displayOrder: 2 },
+    { name: 'Arroz', category: catMap['base'], tier: null, portionSize: 120, extraPrice: 0, costPerUnit: 0.002, isTrackable: true, trackingUnit: 'g', currentStock: 0, minStock: 1000, displayOrder: 1 },
+    { name: 'Quinoa', category: catMap['base'], tier: null, portionSize: 120, extraPrice: 0, costPerUnit: 0.005, isTrackable: true, trackingUnit: 'g', currentStock: 0, minStock: 600, displayOrder: 2 },
 
     // Vegetales (not trackable - manual)
     { name: 'Zanahoria', category: catMap['vegetable'], tier: null, portionSize: 0, extraPrice: 0, costPerUnit: 0.10, displayOrder: 1 },
@@ -98,10 +103,10 @@ async function seed() {
 
   // --- Supplies ---
   const suppliesData = [
-    { name: 'Envase Poke Bowl', slug: 'envase-poke-bowl', description: 'Envase desechable para poke bowl', unitCost: 0.35, currentStock: 200, minStock: 50, trackingUnit: 'units', usagePerPoke: 1 },
-    { name: 'Tapa Envase', slug: 'tapa-envase', description: 'Tapa para envase de poke bowl', unitCost: 0.15, currentStock: 200, minStock: 50, trackingUnit: 'units', usagePerPoke: 1 },
-    { name: 'Cubiertos Desechables', slug: 'cubiertos-desechables', description: 'Set de cubiertos (tenedor/cuchara)', unitCost: 0.10, currentStock: 300, minStock: 80, trackingUnit: 'units', usagePerPoke: 1 },
-    { name: 'Servilletas', slug: 'servilletas', description: 'Servilletas de papel', unitCost: 0.02, currentStock: 500, minStock: 100, trackingUnit: 'units', usagePerPoke: 2 },
+    { name: 'Envase Poke Bowl', slug: 'envase-poke-bowl', description: 'Envase desechable para poke bowl', unitCost: 0.35, currentStock: 0, minStock: 50, trackingUnit: 'units', usagePerPoke: 1 },
+    { name: 'Tapa Envase', slug: 'tapa-envase', description: 'Tapa para envase de poke bowl', unitCost: 0.15, currentStock: 0, minStock: 50, trackingUnit: 'units', usagePerPoke: 1 },
+    { name: 'Cubiertos Desechables', slug: 'cubiertos-desechables', description: 'Set de cubiertos (tenedor/cuchara)', unitCost: 0.10, currentStock: 0, minStock: 80, trackingUnit: 'units', usagePerPoke: 1 },
+    { name: 'Servilletas', slug: 'servilletas', description: 'Servilletas de papel', unitCost: 0.02, currentStock: 0, minStock: 100, trackingUnit: 'units', usagePerPoke: 2 },
   ];
 
   const supplies = await Supply.insertMany(suppliesData);

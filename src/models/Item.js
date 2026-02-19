@@ -21,6 +21,13 @@ const itemSchema = new mongoose.Schema(
     },
     currentStock: { type: Number, default: 0 },
     minStock: { type: Number, default: 0 },
+    preparationStyles: [
+      {
+        id: { type: String, required: true },
+        label: { type: String, required: true },
+        _id: false,
+      },
+    ],
     isAvailable: { type: Boolean, default: true },
     displayOrder: { type: Number, default: 0 },
   },

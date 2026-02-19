@@ -8,6 +8,7 @@ import whatsappRoutes from './whatsapp.routes.js';
 import exchangeRateRoutes from './exchangeRate.routes.js';
 import exchangeRateAdminRoutes from './exchangeRateAdmin.routes.js';
 import protectionRoutes from './protection.routes.js';
+import purchasesRoutes from './purchases.routes.js';
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use('/admin/inventory', inventoryRoutes);
 router.use('/admin/whatsapp', whatsappRoutes);
 router.use('/admin/exchange-rates', exchangeRateAdminRoutes);
 router.use('/admin/protection', protectionRoutes);
+router.use('/admin/purchases', purchasesRoutes);
 
 export default router;

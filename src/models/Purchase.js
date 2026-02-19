@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 
+// Modelo de compra de inventario (registro por item/insumo individual)
+// Usado por inventory.service.js para trazar el historial de costos
 const purchaseSchema = new mongoose.Schema(
   {
     refModel: {
@@ -13,19 +15,15 @@ const purchaseSchema = new mongoose.Schema(
       refPath: 'refModel',
     },
     quantity: { type: Number, required: true },
-    unit: { type: String, trim: true, default: '' },
+    unit: { type: String, required: true },
     unitCost: { type: Number, required: true },
     totalCost: { type: Number, required: true },
-    currency: { type: String, enum: ['USD', 'EUR', 'Bs'], default: 'USD' },
-    rates: {
-      dolarBcv: { type: Number },
-      euroBcv: { type: Number },
-      dolarParalelo: { type: Number },
-    },
+    currency: { type: String, default: 'USD' },
+    rates: { type: Object, default: {} },
     date: { type: Date, default: Date.now },
     notes: { type: String, trim: true, default: '' },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 purchaseSchema.index({ refModel: 1, refId: 1 });

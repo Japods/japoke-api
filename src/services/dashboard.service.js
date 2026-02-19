@@ -271,7 +271,15 @@ export async function getCostAnalysis() {
     // Costo base (sin proteína) compartido por todas las variantes
     let baseCost = 0;
 
-    // Bases: costPerUnit es $/g, multiplicar por gramos de base del poke
+    // Regla: si portionSize > 0 → costPerUnit es $/unidad-de-tracking ($/g, $/ml)
+    //        si portionSize = 0 → costPerUnit es $/porción directamente (no multiplicar)
+    function portionCost(item) {
+      return item.portionSize > 0
+        ? (item.costPerUnit || 0) * item.portionSize
+        : (item.costPerUnit || 0);
+    }
+
+    // Bases: costPerUnit $/g × portionSize g
     const baseItems = itemsByType.base || [];
     if (baseItems.length > 0) {
       const avgCostPerGram =
@@ -279,27 +287,27 @@ export async function getCostAnalysis() {
       baseCost += avgCostPerGram * pt.rules.baseGrams;
     }
 
-    // Vegetales: costPerUnit es $/g, multiplicar por portionSize de cada uno
+    // Vegetales: costPerUnit es $/porción cuando portionSize=0
     const vegItems = itemsByType.vegetable || [];
     if (vegItems.length > 0) {
       const avgPortionCost =
-        vegItems.reduce((sum, i) => sum + (i.costPerUnit || 0) * (i.portionSize || 20), 0) / vegItems.length;
+        vegItems.reduce((sum, i) => sum + portionCost(i), 0) / vegItems.length;
       baseCost += avgPortionCost * Math.min(pt.rules.maxVegetables, vegItems.length);
     }
 
-    // Salsas: costPerUnit es $/ml, multiplicar por portionSize
+    // Salsas: costPerUnit es $/porción cuando portionSize=0
     const sauceItems = itemsByType.sauce || [];
     if (sauceItems.length > 0) {
       const avgPortionCost =
-        sauceItems.reduce((sum, i) => sum + (i.costPerUnit || 0) * (i.portionSize || 10), 0) / sauceItems.length;
+        sauceItems.reduce((sum, i) => sum + portionCost(i), 0) / sauceItems.length;
       baseCost += avgPortionCost * Math.min(pt.rules.maxSauces, sauceItems.length);
     }
 
-    // Toppings: costPerUnit es $/g, multiplicar por portionSize
+    // Toppings: costPerUnit es $/porción cuando portionSize=0
     const toppingItems = itemsByType.topping || [];
     if (toppingItems.length > 0) {
       const avgPortionCost =
-        toppingItems.reduce((sum, i) => sum + (i.costPerUnit || 0) * (i.portionSize || 20), 0) / toppingItems.length;
+        toppingItems.reduce((sum, i) => sum + portionCost(i), 0) / toppingItems.length;
       baseCost += avgPortionCost * Math.min(pt.rules.maxToppings, toppingItems.length);
     }
 

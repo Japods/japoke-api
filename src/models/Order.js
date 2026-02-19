@@ -36,6 +36,7 @@ const pokeItemSchema = new mongoose.Schema(
       {
         item: { type: mongoose.Schema.Types.ObjectId, ref: 'Item' },
         name: String,
+        preparationStyle: { type: String, default: null },
         quantity: Number,
         _id: false,
       },
