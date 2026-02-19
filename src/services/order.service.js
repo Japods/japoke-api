@@ -22,7 +22,7 @@ async function generateOrderNumber() {
   return `JAP-${String(lastNum + 1).padStart(4, '0')}`;
 }
 
-export async function createOrder(customerData, items, paymentData = {}) {
+export async function createOrder(customerData, items, paymentData = {}, deliveryTime = null) {
   if (!items || items.length === 0) {
     throw new AppError('El pedido debe tener al menos un poke bowl', 400);
   }
@@ -63,6 +63,7 @@ export async function createOrder(customerData, items, paymentData = {}) {
       rates,
       status: 'pending',
     },
+    deliveryTime: deliveryTime || null,
     status: 'pending',
   });
 

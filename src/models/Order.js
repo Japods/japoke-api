@@ -112,6 +112,7 @@ const orderSchema = new mongoose.Schema(
         default: 'pending',
       },
     },
+    deliveryTime: { type: String, default: null },
     status: {
       type: String,
       enum: [
