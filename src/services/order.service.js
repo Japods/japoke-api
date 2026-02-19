@@ -1,9 +1,8 @@
 import Order from '../models/Order.js';
 import { validatePokeItem } from './poke-builder.service.js';
-import { deductOrderStock } from './inventory.service.js';
+import { deductOrderStock, restoreOrderStock } from './inventory.service.js';
 import { notifyStatusChange } from './whatsapp.service.js';
 import { getRatesSnapshot } from './exchangeRate.service.js';
-import { restoreOrderStock } from './inventory.service.js';
 import { AppError } from '../utils/app-error.js';
 
 const VALID_TRANSITIONS = {

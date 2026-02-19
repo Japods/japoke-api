@@ -200,7 +200,7 @@ export async function restoreOrderStock(order) {
         await StockMovement.create({
           refModel: 'Item',
           refId: item._id,
-          type: 'adjustment',
+          type: 'manual_adjustment',
           quantity: restoreAmount,
           previousStock,
           newStock: item.currentStock,
@@ -228,7 +228,7 @@ export async function restoreOrderStock(order) {
         await StockMovement.create({
           refModel: 'Supply',
           refId: supply._id,
-          type: 'adjustment',
+          type: 'manual_adjustment',
           quantity: s.quantity,
           previousStock,
           newStock: supply.currentStock,
