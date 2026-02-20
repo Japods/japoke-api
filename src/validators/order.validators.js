@@ -43,4 +43,5 @@ export const createOrderSchema = Joi.object({
     referenceId: Joi.string().trim().allow('').default(''),
     referenceImageUrl: Joi.string().trim().allow('').default(''),
   }).required(),
+  deliveryTime: Joi.string().trim().max(20).allow(null, '').default(null),
 });
