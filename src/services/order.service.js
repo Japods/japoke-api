@@ -22,7 +22,7 @@ async function generateOrderNumber() {
   return `JAP-${String(lastNum + 1).padStart(4, '0')}`;
 }
 
-export async function createOrder(customerData, items, paymentData = {}, deliveryTime = null) {
+export async function createOrder(customerData, items, paymentData = {}, deliveryTime = null, splitPaymentData = null) {
   if (!items || items.length === 0) {
     throw new AppError('El pedido debe tener al menos un poke bowl', 400);
   }
@@ -58,11 +58,18 @@ export async function createOrder(customerData, items, paymentData = {}, deliver
       referenceId: paymentData.referenceId || '',
       referenceImageUrl: paymentData.referenceImageUrl || '',
       amountEur,
-      amountBs,
-      amountUsd,
+      amountBs: (splitPaymentData?.method && paymentData.amountBs != null) ? paymentData.amountBs : amountBs,
+      amountUsd: (splitPaymentData?.method && paymentData.amountUsd != null) ? paymentData.amountUsd : amountUsd,
       rates,
       status: 'pending',
     },
+    splitPayment: splitPaymentData?.method ? {
+      method: splitPaymentData.method,
+      amountBs: splitPaymentData.amountBs || undefined,
+      amountUsd: splitPaymentData.amountUsd || undefined,
+      referenceId: splitPaymentData.referenceId || '',
+      status: 'pending',
+    } : undefined,
     deliveryTime: deliveryTime || null,
     status: 'pending',
   });
@@ -130,6 +137,74 @@ export async function getOrders(filters = {}) {
       totalPages: Math.ceil(totalCount / limit),
     },
   };
+}
+
+export async function updatePaymentDetails(orderId, data) {
+  const order = await Order.findById(orderId);
+  if (!order) throw new AppError('Pedido no encontrado', 404);
+
+  const { method, amountBs, amountUsd, referenceId } = data;
+
+  if (method !== undefined) {
+    if (!['pago_movil', 'efectivo_usd', 'binance_usdt'].includes(method)) {
+      throw new AppError('Método de pago inválido', 400);
+    }
+    order.payment.method = method;
+  }
+  if (amountBs !== undefined) order.payment.amountBs = amountBs;
+  if (amountUsd !== undefined) order.payment.amountUsd = amountUsd;
+  if (referenceId !== undefined) order.payment.referenceId = referenceId;
+
+  await order.save();
+  return order;
+}
+
+export async function addSplitPayment(orderId, paymentData) {
+  const order = await Order.findById(orderId);
+  if (!order) throw new AppError('Pedido no encontrado', 404);
+
+  if (order.splitPayment && order.splitPayment.method) {
+    throw new AppError('El pedido ya tiene un pago dividido', 400);
+  }
+  if (order.status === 'cancelled') {
+    throw new AppError('No se puede agregar pago a una orden cancelada', 400);
+  }
+
+  const { method, amountBs, amountUsd, referenceId } = paymentData;
+
+  if (!method || !['pago_movil', 'efectivo_usd', 'binance_usdt'].includes(method)) {
+    throw new AppError('Método de pago inválido', 400);
+  }
+  if (method === order.payment.method) {
+    throw new AppError('El método del pago dividido debe ser diferente al pago principal', 400);
+  }
+
+  order.splitPayment = {
+    method,
+    amountBs: amountBs || undefined,
+    amountUsd: amountUsd || undefined,
+    referenceId: referenceId || '',
+    status: 'pending',
+  };
+
+  await order.save();
+  return order;
+}
+
+export async function updateSplitPaymentStatus(orderId, status) {
+  const order = await Order.findById(orderId);
+  if (!order) throw new AppError('Pedido no encontrado', 404);
+
+  if (!order.splitPayment || !order.splitPayment.method) {
+    throw new AppError('El pedido no tiene un pago dividido', 404);
+  }
+  if (!['pending', 'verified', 'rejected'].includes(status)) {
+    throw new AppError('Estado de pago inválido', 400);
+  }
+
+  order.splitPayment.status = status;
+  await order.save();
+  return order;
 }
 
 export async function updateStatus(id, newStatus) {

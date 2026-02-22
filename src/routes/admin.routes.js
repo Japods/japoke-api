@@ -18,6 +18,9 @@ const router = Router();
 router.get('/orders', adminCtrl.getOrders);
 router.patch('/orders/:id/status', validate(updateOrderStatusSchema), adminCtrl.updateOrderStatus);
 router.patch('/orders/:id/payment', adminCtrl.updatePaymentStatus);
+router.patch('/orders/:id/payment-details', adminCtrl.updatePaymentDetails);
+router.post('/orders/:id/split-payment', adminCtrl.addSplitPayment);
+router.patch('/orders/:id/split-payment/status', adminCtrl.updateSplitPaymentStatus);
 router.delete('/orders/:id', deleteOrder);
 
 // Categories

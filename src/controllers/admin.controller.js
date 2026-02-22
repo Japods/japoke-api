@@ -21,6 +21,21 @@ export const updatePaymentStatus = asyncHandler(async (req, res) => {
   res.json({ success: true, data: order });
 });
 
+export const updatePaymentDetails = asyncHandler(async (req, res) => {
+  const order = await orderService.updatePaymentDetails(req.params.id, req.body);
+  res.json({ success: true, data: order });
+});
+
+export const addSplitPayment = asyncHandler(async (req, res) => {
+  const order = await orderService.addSplitPayment(req.params.id, req.body);
+  res.status(201).json({ success: true, data: order });
+});
+
+export const updateSplitPaymentStatus = asyncHandler(async (req, res) => {
+  const order = await orderService.updateSplitPaymentStatus(req.params.id, req.body.status);
+  res.json({ success: true, data: order });
+});
+
 // --- Categories ---
 export const getCategories = asyncHandler(async (_req, res) => {
   const categories = await Category.find().sort('displayOrder').lean();

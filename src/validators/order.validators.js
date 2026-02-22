@@ -42,6 +42,14 @@ export const createOrderSchema = Joi.object({
     method: Joi.string().valid('pago_movil', 'efectivo_usd', 'binance_usdt').required(),
     referenceId: Joi.string().trim().allow('').default(''),
     referenceImageUrl: Joi.string().trim().allow('').default(''),
+    amountBs: Joi.number().min(0).allow(null).optional(),
+    amountUsd: Joi.number().min(0).allow(null).optional(),
   }).required(),
+  splitPayment: Joi.object({
+    method: Joi.string().valid('pago_movil', 'efectivo_usd', 'binance_usdt').required(),
+    amountBs: Joi.number().min(0).allow(null).optional(),
+    amountUsd: Joi.number().min(0).allow(null).optional(),
+    referenceId: Joi.string().trim().allow('').default(''),
+  }).optional(),
   deliveryTime: Joi.string().trim().max(20).allow(null, '').default(null),
 });

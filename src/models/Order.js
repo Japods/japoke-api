@@ -112,6 +112,20 @@ const orderSchema = new mongoose.Schema(
         default: 'pending',
       },
     },
+    splitPayment: {
+      method: {
+        type: String,
+        enum: ['pago_movil', 'efectivo_usd', 'binance_usdt'],
+      },
+      amountBs: { type: Number },
+      amountUsd: { type: Number },
+      referenceId: { type: String, trim: true, default: '' },
+      status: {
+        type: String,
+        enum: ['pending', 'verified', 'rejected'],
+        default: 'pending',
+      },
+    },
     deliveryTime: { type: String, default: null },
     status: {
       type: String,
