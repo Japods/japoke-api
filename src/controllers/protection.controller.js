@@ -39,6 +39,12 @@ export const createProtection = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: protection });
 });
 
+export const deleteTransaction = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  await protectionService.deleteWalletTransaction(id);
+  res.json({ success: true });
+});
+
 export const getHistory = asyncHandler(async (req, res) => {
   const { page, limit } = req.query;
   const history = await protectionService.getProtectionHistory({

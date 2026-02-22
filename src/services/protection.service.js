@@ -366,6 +366,12 @@ export async function createWalletTransaction({ type, wallet, amountUsd, amountB
 /**
  * Get wallet transaction history with pagination.
  */
+export async function deleteWalletTransaction(id) {
+  const tx = await WalletTransaction.findByIdAndDelete(id);
+  if (!tx) throw new AppError('Transacción no encontrada', 404);
+  return tx;
+}
+
 export async function getWalletTransactionHistory({ page = 1, limit = 20 } = {}) {
   const skip = (page - 1) * limit;
 
