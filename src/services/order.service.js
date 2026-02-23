@@ -3,6 +3,7 @@ import { validatePokeItem } from './poke-builder.service.js';
 import { deductOrderStock, restoreOrderStock } from './inventory.service.js';
 import { notifyStatusChange } from './whatsapp.service.js';
 import { getRatesSnapshot } from './exchangeRate.service.js';
+import { getStoreStatus } from './settings.service.js';
 import { AppError } from '../utils/app-error.js';
 
 const VALID_TRANSITIONS = {
@@ -23,6 +24,11 @@ async function generateOrderNumber() {
 }
 
 export async function createOrder(customerData, items, paymentData = {}, deliveryTime = null, splitPaymentData = null) {
+  const { isOpen } = await getStoreStatus();
+  if (!isOpen) {
+    throw new AppError('El local está cerrado en este momento. ¡Vuelve pronto!', 503);
+  }
+
   if (!items || items.length === 0) {
     throw new AppError('El pedido debe tener al menos un poke bowl', 400);
   }

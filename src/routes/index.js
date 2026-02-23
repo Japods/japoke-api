@@ -9,8 +9,13 @@ import exchangeRateRoutes from './exchangeRate.routes.js';
 import exchangeRateAdminRoutes from './exchangeRateAdmin.routes.js';
 import protectionRoutes from './protection.routes.js';
 import purchasesRoutes from './purchases.routes.js';
+import settingsRoutes from './settings.routes.js';
+import { getStatus } from '../controllers/settings.controller.js';
 
 const router = Router();
+
+// Public: landing page checks this to show open/closed screen
+router.get('/store-status', getStatus);
 
 router.use('/catalog', catalogRoutes);
 router.use('/orders', ordersRoutes);
@@ -22,5 +27,6 @@ router.use('/admin/whatsapp', whatsappRoutes);
 router.use('/admin/exchange-rates', exchangeRateAdminRoutes);
 router.use('/admin/protection', protectionRoutes);
 router.use('/admin/purchases', purchasesRoutes);
+router.use('/admin/settings', settingsRoutes);
 
 export default router;
