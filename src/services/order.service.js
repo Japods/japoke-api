@@ -3,7 +3,7 @@ import { validatePokeItem } from './poke-builder.service.js';
 import { deductOrderStock, restoreOrderStock } from './inventory.service.js';
 import { notifyStatusChange } from './whatsapp.service.js';
 import { getRatesSnapshot } from './exchangeRate.service.js';
-import { getStoreStatus } from './settings.service.js';
+import { getStoreStatus, getMaxDiscountPct } from './settings.service.js';
 import { AppError } from '../utils/app-error.js';
 
 const VALID_TRANSITIONS = {
@@ -46,10 +46,38 @@ export async function createOrder(customerData, items, paymentData = {}, deliver
   // Get exchange rate snapshot
   const rates = await getRatesSnapshot();
 
-  // Calculate payment amounts
+  // Calculate full payment amounts with discount cap
   const amountEur = total;
-  const amountBs = rates.euroBcv > 0 ? Math.round(total * rates.euroBcv * 100) / 100 : 0;
-  const amountUsd = rates.dolarParalelo > 0 ? Math.round(amountBs / rates.dolarParalelo * 100) / 100 : 0;
+  const fullAmountBs = rates.euroBcv > 0 ? Math.round(total * rates.euroBcv * 100) / 100 : 0;
+  const maxDiscount = await getMaxDiscountPct();
+  const rawAmountUsd = rates.dolarParalelo > 0 ? fullAmountBs / rates.dolarParalelo : 0;
+  const minAmountUsd = amountEur * (1 - maxDiscount / 100); // floor based on max discount
+  const fullAmountUsd = Math.round(Math.max(rawAmountUsd, minAmountUsd) * 100) / 100;
+
+  // When split payment exists, compute primary portion if caller didn't provide it
+  let primaryAmountBs = fullAmountBs;
+  let primaryAmountUsd = fullAmountUsd;
+
+  if (splitPaymentData?.method) {
+    if (paymentData.amountBs != null) {
+      primaryAmountBs = paymentData.amountBs;
+    } else {
+      // Caller didn't send partial Bs — auto-compute by subtracting split portion
+      const isUsd = (m) => m === 'efectivo_usd' || m === 'binance_usdt';
+      if (isUsd(splitPaymentData.method) && splitPaymentData.amountUsd && rates.dolarParalelo > 0) {
+        const splitBs = Math.round(splitPaymentData.amountUsd * rates.dolarParalelo * 100) / 100;
+        primaryAmountBs = Math.max(0, Math.round((fullAmountBs - splitBs) * 100) / 100);
+      } else if (splitPaymentData.method === 'pago_movil' && splitPaymentData.amountBs) {
+        primaryAmountBs = Math.max(0, Math.round((fullAmountBs - splitPaymentData.amountBs) * 100) / 100);
+      }
+    }
+
+    if (paymentData.amountUsd != null) {
+      primaryAmountUsd = paymentData.amountUsd;
+    } else {
+      primaryAmountUsd = rates.dolarParalelo > 0 ? Math.round(primaryAmountBs / rates.dolarParalelo * 100) / 100 : 0;
+    }
+  }
 
   const orderNumber = await generateOrderNumber();
 
@@ -64,8 +92,8 @@ export async function createOrder(customerData, items, paymentData = {}, deliver
       referenceId: paymentData.referenceId || '',
       referenceImageUrl: paymentData.referenceImageUrl || '',
       amountEur,
-      amountBs: (splitPaymentData?.method && paymentData.amountBs != null) ? paymentData.amountBs : amountBs,
-      amountUsd: (splitPaymentData?.method && paymentData.amountUsd != null) ? paymentData.amountUsd : amountUsd,
+      amountBs: primaryAmountBs,
+      amountUsd: primaryAmountUsd,
       rates,
       status: 'pending',
     },
@@ -155,6 +183,10 @@ export async function updatePaymentDetails(orderId, data) {
     if (!['pago_movil', 'efectivo_usd', 'binance_usdt'].includes(method)) {
       throw new AppError('Método de pago inválido', 400);
     }
+    // Prevent setting primary method equal to split method
+    if (order.splitPayment?.method && method === order.splitPayment.method) {
+      throw new AppError('El método principal no puede ser igual al pago dividido', 400);
+    }
     order.payment.method = method;
   }
   if (amountBs !== undefined) order.payment.amountBs = amountBs;
@@ -192,6 +224,30 @@ export async function addSplitPayment(orderId, paymentData) {
     referenceId: referenceId || '',
     status: 'pending',
   };
+
+  // Adjust primary payment amounts so they reflect only the primary portion
+  const dolarParalelo = order.payment.rates?.dolarParalelo || 0;
+  const isUsd = (m) => m === 'efectivo_usd' || m === 'binance_usdt';
+
+  if (isUsd(method) && amountUsd && dolarParalelo > 0) {
+    // Split pays in USD → reduce primary Bs and USD by the split portion
+    const splitBsEquivalent = Math.round(amountUsd * dolarParalelo * 100) / 100;
+    if (order.payment.amountBs) {
+      order.payment.amountBs = Math.max(0, Math.round((order.payment.amountBs - splitBsEquivalent) * 100) / 100);
+    }
+    if (order.payment.amountUsd) {
+      order.payment.amountUsd = Math.max(0, Math.round((order.payment.amountUsd - amountUsd) * 100) / 100);
+    }
+  } else if (method === 'pago_movil' && amountBs && dolarParalelo > 0) {
+    // Split pays in Bs → reduce primary USD and Bs by the split portion
+    const splitUsdEquivalent = Math.round((amountBs / dolarParalelo) * 100) / 100;
+    if (order.payment.amountBs) {
+      order.payment.amountBs = Math.max(0, Math.round((order.payment.amountBs - amountBs) * 100) / 100);
+    }
+    if (order.payment.amountUsd) {
+      order.payment.amountUsd = Math.max(0, Math.round((order.payment.amountUsd - splitUsdEquivalent) * 100) / 100);
+    }
+  }
 
   await order.save();
   return order;
