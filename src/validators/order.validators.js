@@ -5,6 +5,7 @@ const objectId = Joi.string().regex(/^[0-9a-fA-F]{24}$/);
 const selectionItemWithQty = Joi.object({
   item: objectId.required(),
   quantity: Joi.number().positive().required(),
+  preparationStyle: Joi.string().allow(null).default(null),
 });
 
 const selectionItem = Joi.object({
@@ -35,6 +36,7 @@ export const createOrderSchema = Joi.object({
     email: Joi.string().trim().email().required(),
     phone: Joi.string().trim().min(7).max(20).required(),
     address: Joi.string().trim().min(5).max(300).required(),
+    mapUrl: Joi.string().trim().uri().max(500).allow('').default(''),
     notes: Joi.string().trim().max(500).allow('').default(''),
   }).required(),
   items: Joi.array().items(pokeItemSchema).min(1).required(),

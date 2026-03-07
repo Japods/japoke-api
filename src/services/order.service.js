@@ -119,12 +119,48 @@ export async function deleteOrder(orderId) {
   await Order.findByIdAndDelete(orderId);
 }
 
-export async function updatePaymentStatus(orderId, paymentStatus) {
+export async function updatePaymentStatus(orderId, paymentStatus, recalculateRates = false) {
   const order = await Order.findById(orderId);
   if (!order) throw new AppError('Pedido no encontrado', 404);
 
   if (!['pending', 'verified', 'rejected'].includes(paymentStatus)) {
     throw new AppError('Estado de pago inválido', 400);
+  }
+
+  // Recalculate amounts with current rates when verifying a pending payment
+  if (paymentStatus === 'verified' && order.payment.status === 'pending' && recalculateRates) {
+    const rates = await getRatesSnapshot();
+    const amountEur = order.payment.amountEur || order.total;
+    const maxDiscount = await getMaxDiscountPct();
+
+    const fullAmountBs = rates.euroBcv > 0 ? Math.round(amountEur * rates.euroBcv * 100) / 100 : 0;
+    const rawAmountUsd = rates.dolarParalelo > 0 ? fullAmountBs / rates.dolarParalelo : 0;
+    const minAmountUsd = amountEur * (1 - maxDiscount / 100);
+    const fullAmountUsd = Math.round(Math.max(rawAmountUsd, minAmountUsd) * 100) / 100;
+
+    // If there's a split payment, recalculate proportionally
+    if (order.splitPayment?.method) {
+      // Keep split amounts as-is, recalculate primary as remainder
+      const splitBs = order.splitPayment.amountBs || 0;
+      const splitUsd = order.splitPayment.amountUsd || 0;
+      const isUsdSplit = order.splitPayment.method !== 'pago_movil';
+
+      if (isUsdSplit && splitUsd > 0 && rates.dolarParalelo > 0) {
+        const splitBsEquiv = Math.round(splitUsd * rates.dolarParalelo * 100) / 100;
+        order.payment.amountBs = Math.max(0, Math.round((fullAmountBs - splitBsEquiv) * 100) / 100);
+        order.payment.amountUsd = Math.max(0, Math.round((fullAmountUsd - splitUsd) * 100) / 100);
+      } else if (splitBs > 0) {
+        order.payment.amountBs = Math.max(0, Math.round((fullAmountBs - splitBs) * 100) / 100);
+        order.payment.amountUsd = rates.dolarParalelo > 0
+          ? Math.round(order.payment.amountBs / rates.dolarParalelo * 100) / 100
+          : 0;
+      }
+    } else {
+      order.payment.amountBs = fullAmountBs;
+      order.payment.amountUsd = fullAmountUsd;
+    }
+
+    order.payment.rates = rates;
   }
 
   order.payment.status = paymentStatus;
@@ -267,6 +303,41 @@ export async function updateSplitPaymentStatus(orderId, status) {
   order.splitPayment.status = status;
   await order.save();
   return order;
+}
+
+export async function setCourtesy(orderId, isCourtesy, reason = '') {
+  const order = await Order.findById(orderId);
+  if (!order) throw new AppError('Pedido no encontrado', 404);
+
+  order.isCourtesy = isCourtesy;
+  order.courtesyReason = reason;
+
+  if (isCourtesy) {
+    // Auto-verify payment on courtesy orders
+    order.payment.status = 'verified';
+    if (order.splitPayment?.method) {
+      order.splitPayment.status = 'verified';
+    }
+  }
+
+  await order.save();
+  return order;
+}
+
+export async function getUnpaidOrders() {
+  // Find all non-cancelled orders where primary OR split payment is still pending
+  const orders = await Order.find({
+    status: { $nin: ['cancelled'] },
+    isCourtesy: { $ne: true },
+    $or: [
+      { 'payment.status': 'pending' },
+      { 'splitPayment.method': { $exists: true, $ne: null }, 'splitPayment.status': 'pending' },
+    ],
+  })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return orders;
 }
 
 export async function updateStatus(id, newStatus) {

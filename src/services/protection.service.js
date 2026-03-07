@@ -15,6 +15,7 @@ async function getTotalBsReceived() {
           'payment.method': 'pago_movil',
           'payment.status': 'verified',
           status: { $nin: ['cancelled'] },
+          isCourtesy: { $ne: true },
         },
       },
       {
@@ -31,6 +32,7 @@ async function getTotalBsReceived() {
           'splitPayment.method': 'pago_movil',
           'splitPayment.status': 'verified',
           status: { $nin: ['cancelled'] },
+          isCourtesy: { $ne: true },
         },
       },
       {
@@ -60,6 +62,7 @@ async function getDirectUsdReceived() {
           'payment.method': { $in: ['efectivo_usd', 'binance_usdt'] },
           'payment.status': 'verified',
           status: { $nin: ['cancelled'] },
+          isCourtesy: { $ne: true },
         },
       },
       {
@@ -76,6 +79,7 @@ async function getDirectUsdReceived() {
           'splitPayment.method': { $in: ['efectivo_usd', 'binance_usdt'] },
           'splitPayment.status': 'verified',
           status: { $nin: ['cancelled'] },
+          isCourtesy: { $ne: true },
         },
       },
       {
@@ -390,4 +394,52 @@ export async function getWalletTransactionHistory({ page = 1, limit = 20 } = {})
     page,
     totalPages: Math.ceil(total / limit),
   };
+}
+
+/**
+ * Get unified history: protections + wallet transactions, sorted by date, properly paginated.
+ */
+export async function getUnifiedHistory({ page = 1, limit = 20 } = {}) {
+  const skip = (page - 1) * limit;
+
+  // Count both collections
+  const [protectionCount, txCount] = await Promise.all([
+    BsProtection.countDocuments(),
+    WalletTransaction.countDocuments(),
+  ]);
+  const totalCount = protectionCount + txCount;
+  const totalPages = Math.ceil(totalCount / limit);
+
+  // Fetch both sorted by date, with enough to fill the page
+  // We use a union-like approach: fetch from both, merge, sort, slice
+  const [protections, transactions] = await Promise.all([
+    BsProtection.find().sort({ protectedAt: -1 }).lean(),
+    WalletTransaction.find().sort({ date: -1 }).lean(),
+  ]);
+
+  const combined = [
+    ...protections.map((r) => ({
+      _id: r._id,
+      recordType: 'protection',
+      date: r.protectedAt,
+      amountBs: r.amountBs,
+      amountUsd: r.amountUsd,
+      rate: r.rateDolarParalelo,
+      destination: r.destination,
+      notes: r.notes,
+    })),
+    ...transactions.map((r) => ({
+      _id: r._id,
+      recordType: r.type,
+      date: r.date,
+      amountBs: r.amountBs,
+      amountUsd: r.amountUsd,
+      wallet: r.wallet,
+      description: r.description,
+    })),
+  ].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const records = combined.slice(skip, skip + limit);
+
+  return { records, totalCount, page, totalPages };
 }

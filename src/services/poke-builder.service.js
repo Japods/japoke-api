@@ -58,7 +58,10 @@ export async function validatePokeItem(pokeTypeId, selections, extras = []) {
       );
     }
     totalProteinGrams += p.quantity;
-    validatedProteins.push({ item: item._id, name: item.name, quantity: p.quantity });
+    const proteinName = p.preparationStyle
+      ? (item.preparationStyles?.find((s) => s.id === p.preparationStyle)?.label || item.name)
+      : item.name;
+    validatedProteins.push({ item: item._id, name: proteinName, preparationStyle: p.preparationStyle || null, quantity: p.quantity });
   }
   if (totalProteinGrams !== rules.proteinGrams) {
     throw new AppError(

@@ -21,6 +21,9 @@ router.patch('/orders/:id/payment', adminCtrl.updatePaymentStatus);
 router.patch('/orders/:id/payment-details', adminCtrl.updatePaymentDetails);
 router.post('/orders/:id/split-payment', adminCtrl.addSplitPayment);
 router.patch('/orders/:id/split-payment/status', adminCtrl.updateSplitPaymentStatus);
+router.patch('/orders/:id/courtesy', adminCtrl.setCourtesy);
+router.patch('/orders/:id/delivery-free', adminCtrl.setDeliveryFree);
+router.get('/orders-unpaid', adminCtrl.getUnpaidOrders);
 router.delete('/orders/:id', deleteOrder);
 
 // Categories

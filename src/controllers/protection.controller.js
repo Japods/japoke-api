@@ -53,3 +53,12 @@ export const getHistory = asyncHandler(async (req, res) => {
   });
   res.json({ success: true, ...history });
 });
+
+export const getUnifiedHistory = asyncHandler(async (req, res) => {
+  const { page, limit } = req.query;
+  const history = await protectionService.getUnifiedHistory({
+    page: page ? Number(page) : 1,
+    limit: limit ? Number(limit) : 20,
+  });
+  res.json({ success: true, ...history });
+});

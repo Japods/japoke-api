@@ -9,5 +9,6 @@ router.get('/history', protectionCtrl.getHistory);
 router.post('/transaction', protectionCtrl.createTransaction);
 router.delete('/transaction/:id', protectionCtrl.deleteTransaction);
 router.get('/transactions', protectionCtrl.getTransactions);
+router.get('/unified-history', protectionCtrl.getUnifiedHistory);
 
 export default router;

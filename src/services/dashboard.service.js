@@ -29,14 +29,17 @@ export async function getDashboardSummary({ from, to } = {}) {
   ]);
 
   const periodDelivered = periodOrders.filter((o) => o.status === 'delivered');
-  const periodRevenue = periodDelivered.reduce((sum, o) => sum + o.total, 0);
+  const periodPaidDelivered = periodDelivered.filter((o) => !o.isCourtesy);
+  const periodCourtesy = periodDelivered.filter((o) => o.isCourtesy);
+  const periodRevenue = periodPaidDelivered.reduce((sum, o) => sum + o.total, 0);
   const periodBowls = periodOrders.reduce((sum, o) => sum + o.items.length, 0);
   const periodAvgTicket = periodDelivered.length > 0
     ? periodRevenue / periodDelivered.length
     : 0;
 
-  const todayRevenue = todayOrders
-    .filter((o) => o.status === 'delivered')
+  const todayDelivered = todayOrders.filter((o) => o.status === 'delivered');
+  const todayRevenue = todayDelivered
+    .filter((o) => !o.isCourtesy)
     .reduce((sum, o) => sum + o.total, 0);
 
   return {
@@ -45,7 +48,8 @@ export async function getDashboardSummary({ from, to } = {}) {
       delivered: periodDelivered.length,
       revenue: periodRevenue,
       bowls: periodBowls,
-      avgTicket: periodAvgTicket,
+      avgTicket: periodPaidDelivered.length > 0 ? periodRevenue / periodPaidDelivered.length : 0,
+      courtesy: periodCourtesy.length,
     },
     today: {
       orders: todayOrders.length,
@@ -56,7 +60,7 @@ export async function getDashboardSummary({ from, to } = {}) {
 }
 
 export async function getSalesSummary({ from, to, groupBy = 'day' }) {
-  const matchStage = { status: 'delivered' };
+  const matchStage = { status: 'delivered', isCourtesy: { $ne: true } };
   if (from || to) {
     matchStage.createdAt = {};
     if (from) matchStage.createdAt.$gte = new Date(from);

@@ -2,6 +2,7 @@ import { asyncHandler } from '../utils/async-handler.js';
 import Category from '../models/Category.js';
 import Item from '../models/Item.js';
 import PokeType from '../models/PokeType.js';
+import Order from '../models/Order.js';
 import * as orderService from '../services/order.service.js';
 import { AppError } from '../utils/app-error.js';
 
@@ -17,7 +18,8 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
 });
 
 export const updatePaymentStatus = asyncHandler(async (req, res) => {
-  const order = await orderService.updatePaymentStatus(req.params.id, req.body.paymentStatus);
+  const { paymentStatus, recalculateRates } = req.body;
+  const order = await orderService.updatePaymentStatus(req.params.id, paymentStatus, recalculateRates);
   res.json({ success: true, data: order });
 });
 
@@ -33,6 +35,31 @@ export const addSplitPayment = asyncHandler(async (req, res) => {
 
 export const updateSplitPaymentStatus = asyncHandler(async (req, res) => {
   const order = await orderService.updateSplitPaymentStatus(req.params.id, req.body.status);
+  res.json({ success: true, data: order });
+});
+
+export const setCourtesy = asyncHandler(async (req, res) => {
+  const { isCourtesy, reason } = req.body;
+  const order = await orderService.setCourtesy(req.params.id, isCourtesy, reason);
+  res.json({ success: true, data: order });
+});
+
+export const getUnpaidOrders = asyncHandler(async (_req, res) => {
+  const orders = await orderService.getUnpaidOrders();
+  res.json({ success: true, data: orders });
+});
+
+export const setDeliveryFree = asyncHandler(async (req, res) => {
+  const { deliveryFree } = req.body;
+  if (typeof deliveryFree !== 'boolean') throw new AppError('deliveryFree debe ser true o false', 400);
+
+  const order = await Order.findById(req.params.id);
+  if (!order) throw new AppError('Pedido no encontrado', 404);
+
+  order.deliveryFree = deliveryFree;
+  if (deliveryFree) order.deliveryCostBs = 0;
+  await order.save();
+
   res.json({ success: true, data: order });
 });
 

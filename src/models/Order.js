@@ -86,6 +86,7 @@ const orderSchema = new mongoose.Schema(
       email: { type: String, required: true, trim: true, lowercase: true },
       phone: { type: String, required: true, trim: true },
       address: { type: String, required: true, trim: true },
+      mapUrl: { type: String, trim: true, default: '' },
       notes: { type: String, trim: true, default: '' },
     },
     items: [pokeItemSchema],
@@ -127,6 +128,10 @@ const orderSchema = new mongoose.Schema(
       },
     },
     deliveryTime: { type: String, default: null },
+    deliveryCostBs: { type: Number, default: 0 },
+    deliveryFree: { type: Boolean, default: false },
+    isCourtesy: { type: Boolean, default: false },
+    courtesyReason: { type: String, trim: true, default: '' },
     status: {
       type: String,
       enum: [
@@ -142,5 +147,11 @@ const orderSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Indexes for wallet aggregations and common queries
+orderSchema.index({ status: 1, createdAt: -1 });
+orderSchema.index({ 'payment.method': 1, 'payment.status': 1, status: 1 });
+orderSchema.index({ 'splitPayment.method': 1, 'splitPayment.status': 1, status: 1 });
+orderSchema.index({ isCourtesy: 1, status: 1 });
 
 export default mongoose.model('Order', orderSchema);
