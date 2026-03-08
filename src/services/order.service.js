@@ -1,4 +1,6 @@
 import Order from '../models/Order.js';
+import Promotion from '../models/Promotion.js';
+import DiscountCode from '../models/DiscountCode.js';
 import { validatePokeItem } from './poke-builder.service.js';
 import { deductOrderStock, restoreOrderStock } from './inventory.service.js';
 import { notifyStatusChange } from './whatsapp.service.js';
@@ -23,7 +25,14 @@ async function generateOrderNumber() {
   return `JAP-${String(lastNum + 1).padStart(4, '0')}`;
 }
 
-export async function createOrder(customerData, items, paymentData = {}, deliveryTime = null, splitPaymentData = null) {
+export async function validateDiscountCode(code) {
+  const discount = await DiscountCode.findOne({ code: code.toUpperCase() });
+  if (!discount) throw new AppError('Código de descuento no encontrado', 404);
+  if (!discount.isValid()) throw new AppError('Código de descuento expirado o agotado', 400);
+  return { code: discount.code, percentage: discount.percentage };
+}
+
+export async function createOrder(customerData, items, paymentData = {}, deliveryTime = null, splitPaymentData = null, promoData = {}) {
   const { isOpen } = await getStoreStatus();
   if (!isOpen) {
     throw new AppError('El local está cerrado en este momento. ¡Vuelve pronto!', 503);
@@ -41,7 +50,81 @@ export async function createOrder(customerData, items, paymentData = {}, deliver
   }
 
   const subtotal = validatedItems.reduce((sum, item) => sum + item.itemTotal, 0);
-  const total = subtotal;
+  let total = subtotal;
+
+  // --- Promotion validation ---
+  let promotionRecord = null;
+  const { promotionId, promoItemIndexes, discountCode } = promoData;
+
+  if (promotionId && discountCode) {
+    throw new AppError('No se puede usar una promoción y un código de descuento a la vez', 400);
+  }
+
+  if (promotionId) {
+    const promo = await Promotion.findById(promotionId);
+    if (!promo || !promo.active) throw new AppError('Promoción no disponible', 400);
+
+    if (!promoItemIndexes || promoItemIndexes.length !== promo.totalQuantity) {
+      throw new AppError(`La promoción requiere ${promo.totalQuantity} poke(s)`, 400);
+    }
+
+    // Validate promo items match required poke types
+    const requiredCounts = {};
+    for (const pt of promo.pokeTypes) {
+      requiredCounts[pt.pokeType.toString()] = (requiredCounts[pt.pokeType.toString()] || 0) + pt.quantity;
+    }
+
+    const actualCounts = {};
+    for (const idx of promoItemIndexes) {
+      if (idx < 0 || idx >= validatedItems.length) throw new AppError('Índice de poke inválido en la promoción', 400);
+      const typeId = validatedItems[idx].pokeType.toString();
+      actualCounts[typeId] = (actualCounts[typeId] || 0) + 1;
+    }
+
+    for (const [typeId, qty] of Object.entries(requiredCounts)) {
+      if ((actualCounts[typeId] || 0) < qty) {
+        throw new AppError('Los pokes seleccionados no coinciden con la promoción', 400);
+      }
+    }
+
+    // Calculate promo: non-promo items at full price + promo price + promo extras
+    const promoItemsExtrasTotal = promoItemIndexes.reduce((sum, idx) => {
+      return sum + (validatedItems[idx].extras || []).reduce((s, e) => s + e.subtotal, 0);
+    }, 0);
+
+    const nonPromoTotal = validatedItems.reduce((sum, item, i) => {
+      return promoItemIndexes.includes(i) ? sum : sum + item.itemTotal;
+    }, 0);
+
+    promotionRecord = {
+      promotionId: promo._id,
+      name: promo.name,
+      promoPrice: promo.promoPrice,
+      itemIndexes: promoItemIndexes,
+    };
+
+    total = nonPromoTotal + promo.promoPrice + promoItemsExtrasTotal;
+  }
+
+  // --- Discount code validation ---
+  let discountRecord = null;
+
+  if (discountCode && !promotionId) {
+    const discount = await DiscountCode.findOne({ code: discountCode.toUpperCase() });
+    if (!discount || !discount.isValid()) throw new AppError('Código de descuento inválido o expirado', 400);
+
+    const discountAmount = Math.round(subtotal * (discount.percentage / 100) * 100) / 100;
+    discountRecord = {
+      code: discount.code,
+      percentage: discount.percentage,
+      discountAmount,
+    };
+
+    discount.usageCount += 1;
+    await discount.save();
+
+    total = Math.round((subtotal - discountAmount) * 100) / 100;
+  }
 
   // Get exchange rate snapshot
   const rates = await getRatesSnapshot();
@@ -104,6 +187,8 @@ export async function createOrder(customerData, items, paymentData = {}, deliver
       referenceId: splitPaymentData.referenceId || '',
       status: 'pending',
     } : undefined,
+    promotion: promotionRecord || undefined,
+    discountCode: discountRecord || undefined,
     deliveryTime: deliveryTime || null,
     status: 'pending',
   });

@@ -3,6 +3,8 @@ import Category from '../models/Category.js';
 import Item from '../models/Item.js';
 import PokeType from '../models/PokeType.js';
 import Order from '../models/Order.js';
+import Promotion from '../models/Promotion.js';
+import DiscountCode from '../models/DiscountCode.js';
 import * as orderService from '../services/order.service.js';
 import { AppError } from '../utils/app-error.js';
 
@@ -123,4 +125,65 @@ export const updatePokeType = asyncHandler(async (req, res) => {
   });
   if (!pokeType) throw new AppError('Tipo de poke no encontrado', 404);
   res.json({ success: true, data: pokeType });
+});
+
+// --- Promotions ---
+export const getPromotions = asyncHandler(async (_req, res) => {
+  const promotions = await Promotion.find()
+    .populate('pokeTypes.pokeType', 'name slug basePrice')
+    .populate('allowedProteins', 'name slug tier')
+    .sort('displayOrder')
+    .lean();
+  res.json({ success: true, data: promotions });
+});
+
+export const createPromotion = asyncHandler(async (req, res) => {
+  const { pokeTypes } = req.body;
+  const totalQuantity = (pokeTypes || []).reduce((sum, pt) => sum + pt.quantity, 0);
+  const promotion = await Promotion.create({ ...req.body, totalQuantity });
+  res.status(201).json({ success: true, data: promotion });
+});
+
+export const updatePromotion = asyncHandler(async (req, res) => {
+  if (req.body.pokeTypes) {
+    req.body.totalQuantity = req.body.pokeTypes.reduce((sum, pt) => sum + pt.quantity, 0);
+  }
+  const promotion = await Promotion.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true,
+  });
+  if (!promotion) throw new AppError('Promoción no encontrada', 404);
+  res.json({ success: true, data: promotion });
+});
+
+export const deletePromotion = asyncHandler(async (req, res) => {
+  const promotion = await Promotion.findByIdAndDelete(req.params.id);
+  if (!promotion) throw new AppError('Promoción no encontrada', 404);
+  res.json({ success: true, message: 'Promoción eliminada' });
+});
+
+// --- Discount Codes ---
+export const getDiscountCodes = asyncHandler(async (_req, res) => {
+  const codes = await DiscountCode.find().sort({ createdAt: -1 }).lean();
+  res.json({ success: true, data: codes });
+});
+
+export const createDiscountCode = asyncHandler(async (req, res) => {
+  const code = await DiscountCode.create(req.body);
+  res.status(201).json({ success: true, data: code });
+});
+
+export const updateDiscountCode = asyncHandler(async (req, res) => {
+  const code = await DiscountCode.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true,
+  });
+  if (!code) throw new AppError('Código no encontrado', 404);
+  res.json({ success: true, data: code });
+});
+
+export const deleteDiscountCode = asyncHandler(async (req, res) => {
+  const code = await DiscountCode.findByIdAndDelete(req.params.id);
+  if (!code) throw new AppError('Código no encontrado', 404);
+  res.json({ success: true, message: 'Código eliminado' });
 });

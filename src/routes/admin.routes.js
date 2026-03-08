@@ -41,4 +41,16 @@ router.get('/poke-types', adminCtrl.getPokeTypes);
 router.post('/poke-types', validate(createPokeTypeSchema), adminCtrl.createPokeType);
 router.patch('/poke-types/:id', validate(updatePokeTypeSchema), adminCtrl.updatePokeType);
 
+// Promotions
+router.get('/promotions', adminCtrl.getPromotions);
+router.post('/promotions', adminCtrl.createPromotion);
+router.patch('/promotions/:id', adminCtrl.updatePromotion);
+router.delete('/promotions/:id', adminCtrl.deletePromotion);
+
+// Discount Codes
+router.get('/discount-codes', adminCtrl.getDiscountCodes);
+router.post('/discount-codes', adminCtrl.createDiscountCode);
+router.patch('/discount-codes/:id', adminCtrl.updateDiscountCode);
+router.delete('/discount-codes/:id', adminCtrl.deleteDiscountCode);
+
 export default router;

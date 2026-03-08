@@ -127,6 +127,17 @@ const orderSchema = new mongoose.Schema(
         default: 'pending',
       },
     },
+    promotion: {
+      promotionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Promotion' },
+      name: { type: String },
+      promoPrice: { type: Number },
+      itemIndexes: [{ type: Number }],
+    },
+    discountCode: {
+      code: { type: String },
+      percentage: { type: Number },
+      discountAmount: { type: Number },
+    },
     deliveryTime: { type: String, default: null },
     deliveryCostBs: { type: Number, default: 0 },
     deliveryFree: { type: Boolean, default: false },

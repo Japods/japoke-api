@@ -54,4 +54,7 @@ export const createOrderSchema = Joi.object({
     referenceId: Joi.string().trim().allow('').default(''),
   }).optional(),
   deliveryTime: Joi.string().trim().max(20).allow(null, '').default(null),
+  promotionId: objectId.optional().allow(null),
+  promoItemIndexes: Joi.array().items(Joi.number().integer().min(0)).optional(),
+  discountCode: Joi.string().trim().max(50).optional().allow(null, ''),
 });

@@ -6,6 +6,7 @@ import { createOrderSchema } from '../validators/order.validators.js';
 const router = Router();
 
 router.post('/', validate(createOrderSchema), orderCtrl.createOrder);
+router.get('/discount-codes/validate', orderCtrl.validateDiscountCode);
 router.get('/:id', orderCtrl.getOrderById);
 
 export default router;
