@@ -9,6 +9,7 @@ const pokeTypeSchema = new mongoose.Schema(
       proteinGrams: { type: Number, required: true },
       baseGrams: { type: Number, required: true },
       maxVegetables: { type: Number, required: true },
+      maxFruits: { type: Number, default: 1 },
       maxSauces: { type: Number, required: true },
       maxToppings: { type: Number, required: true },
     },

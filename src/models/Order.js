@@ -13,6 +13,8 @@ const extraSchema = new mongoose.Schema(
         'avocado',
         'topping',
         'sauce',
+        'fruit',
+        'vegetable',
       ],
     },
     quantity: { type: Number, default: 1 },
@@ -56,6 +58,13 @@ const pokeItemSchema = new mongoose.Schema(
         _id: false,
       },
     ],
+    fruits: [
+      {
+        item: { type: mongoose.Schema.Types.ObjectId, ref: 'Item' },
+        name: String,
+        _id: false,
+      },
+    ],
     sauces: [
       {
         item: { type: mongoose.Schema.Types.ObjectId, ref: 'Item' },
@@ -90,6 +99,16 @@ const orderSchema = new mongoose.Schema(
       notes: { type: String, trim: true, default: '' },
     },
     items: [pokeItemSchema],
+    addOns: [
+      {
+        item: { type: mongoose.Schema.Types.ObjectId, ref: 'Item' },
+        name: { type: String, required: true },
+        unitPrice: { type: Number, required: true },
+        quantity: { type: Number, required: true, min: 1 },
+        subtotal: { type: Number, required: true },
+        _id: false,
+      },
+    ],
     subtotal: { type: Number, required: true },
     total: { type: Number, required: true },
     payment: {

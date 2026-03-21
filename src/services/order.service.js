@@ -1,4 +1,5 @@
 import Order from '../models/Order.js';
+import Item from '../models/Item.js';
 import Promotion from '../models/Promotion.js';
 import DiscountCode from '../models/DiscountCode.js';
 import { validatePokeItem } from './poke-builder.service.js';
@@ -32,7 +33,7 @@ export async function validateDiscountCode(code) {
   return { code: discount.code, percentage: discount.percentage };
 }
 
-export async function createOrder(customerData, items, paymentData = {}, deliveryTime = null, splitPaymentData = null, promoData = {}) {
+export async function createOrder(customerData, items, paymentData = {}, deliveryTime = null, splitPaymentData = null, promoData = {}, addOns = []) {
   const { isOpen } = await getStoreStatus();
   if (!isOpen) {
     throw new AppError('El local está cerrado en este momento. ¡Vuelve pronto!', 503);
@@ -49,7 +50,37 @@ export async function createOrder(customerData, items, paymentData = {}, deliver
     validatedItems.push(validated);
   }
 
-  const subtotal = validatedItems.reduce((sum, item) => sum + item.itemTotal, 0);
+  // Validate add-ons (beverages, desserts, etc.)
+  let addOnsTotal = 0;
+  const validatedAddOns = [];
+  if (addOns && addOns.length > 0) {
+    const addOnItems = await Item.find({ _id: { $in: addOns.map(a => a.item) } }).populate('category').lean();
+    const addOnMap = {};
+    for (const item of addOnItems) {
+      addOnMap[item._id.toString()] = item;
+    }
+    for (const addOn of addOns) {
+      const item = addOnMap[addOn.item?.toString()];
+      if (!item) throw new AppError(`Add-on no encontrado: ${addOn.item}`, 400);
+      if (!item.isAvailable) throw new AppError(`${item.name} no está disponible`, 400);
+      if (!['beverage', 'dessert'].includes(item.category.type)) {
+        throw new AppError(`${item.name} no es un complemento válido`, 400);
+      }
+      const qty = addOn.quantity || 1;
+      const unitPrice = item.extraPrice || 0;
+      const subtotal = unitPrice * qty;
+      addOnsTotal += subtotal;
+      validatedAddOns.push({
+        item: item._id,
+        name: item.name,
+        unitPrice,
+        quantity: qty,
+        subtotal,
+      });
+    }
+  }
+
+  const subtotal = validatedItems.reduce((sum, item) => sum + item.itemTotal, 0) + addOnsTotal;
   let total = subtotal;
 
   // --- Promotion validation ---
@@ -168,6 +199,7 @@ export async function createOrder(customerData, items, paymentData = {}, deliver
     orderNumber,
     customer: customerData,
     items: validatedItems,
+    addOns: validatedAddOns,
     subtotal,
     total,
     payment: {

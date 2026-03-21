@@ -2,10 +2,10 @@ import { asyncHandler } from '../utils/async-handler.js';
 import * as orderService from '../services/order.service.js';
 
 export const createOrder = asyncHandler(async (req, res) => {
-  const { customer, items, payment, deliveryTime, splitPayment, promotionId, promoItemIndexes, discountCode } = req.body;
+  const { customer, items, payment, deliveryTime, splitPayment, promotionId, promoItemIndexes, discountCode, addOns } = req.body;
   const order = await orderService.createOrder(customer, items, payment, deliveryTime, splitPayment, {
     promotionId, promoItemIndexes, discountCode,
-  });
+  }, addOns);
   res.status(201).json({ success: true, data: order });
 });
 

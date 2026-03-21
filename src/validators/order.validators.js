@@ -23,6 +23,7 @@ const pokeItemSchema = Joi.object({
     proteins: Joi.array().items(selectionItemWithQty).min(1).max(2).required(),
     bases: Joi.array().items(selectionItemWithQty).min(1).max(2).required(),
     vegetables: Joi.array().items(selectionItem).min(0).max(10).required(),
+    fruits: Joi.array().items(selectionItem).min(0).max(10).default([]),
     sauces: Joi.array().items(selectionItem).min(0).max(10).required(),
     toppings: Joi.array().items(selectionItem).min(0).max(10).required(),
   }).required(),
@@ -40,6 +41,12 @@ export const createOrderSchema = Joi.object({
     notes: Joi.string().trim().max(500).allow('').default(''),
   }).required(),
   items: Joi.array().items(pokeItemSchema).min(1).required(),
+  addOns: Joi.array().items(
+    Joi.object({
+      item: objectId.required(),
+      quantity: Joi.number().integer().min(1).default(1),
+    })
+  ).default([]),
   payment: Joi.object({
     method: Joi.string().valid('pago_movil', 'efectivo_usd', 'binance_usdt').required(),
     referenceId: Joi.string().trim().allow('').default(''),

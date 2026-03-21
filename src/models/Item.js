@@ -30,6 +30,7 @@ const itemSchema = new mongoose.Schema(
     ],
     isAvailable: { type: Boolean, default: true },
     displayOrder: { type: Number, default: 0 },
+    extraOnly: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

@@ -17,6 +17,7 @@ export async function validatePokeItem(pokeTypeId, selections, extras = []) {
     ...selections.proteins.map((p) => p.item),
     ...selections.bases.map((b) => b.item),
     ...selections.vegetables.map((v) => v.item),
+    ...(selections.fruits || []).map((f) => f.item),
     ...selections.sauces.map((s) => s.item),
     ...selections.toppings.map((t) => t.item),
     ...extras.map((e) => e.item),
@@ -105,6 +106,21 @@ export async function validatePokeItem(pokeTypeId, selections, extras = []) {
     validatedVegetables.push({ item: item._id, name: item.name });
   }
 
+  // 4b. Validate fruits (optional)
+  if (selections.fruits && selections.fruits.length > (rules.maxFruits || 1)) {
+    throw new AppError(
+      `Máximo ${rules.maxFruits || 1} frutas (recibido: ${selections.fruits.length})`,
+      400
+    );
+  }
+  const validatedFruits = [];
+  if (selections.fruits) {
+    for (const f of selections.fruits) {
+      const item = getItem(f.item, 'fruit');
+      validatedFruits.push({ item: item._id, name: item.name });
+    }
+  }
+
   // 5. Validate sauces
   if (selections.sauces.length > rules.maxSauces) {
     throw new AppError(
@@ -148,15 +164,18 @@ export async function validatePokeItem(pokeTypeId, selections, extras = []) {
     } else if (catType === 'protein' && item.tier === 'base') {
       expectedType = 'protein-base';
       expectedPrice = item.extraPrice; // 3
-    } else if (catType === 'vegetable' && item.slug === 'aguacate') {
-      expectedType = 'avocado';
-      expectedPrice = item.extraPrice; // 1
+    } else if (catType === 'vegetable' && item.extraPrice > 0) {
+      expectedType = item.slug === 'aguacate' ? 'avocado' : 'vegetable';
+      expectedPrice = item.extraPrice;
     } else if (catType === 'topping') {
       expectedType = 'topping';
       expectedPrice = item.extraPrice; // 1
     } else if (catType === 'sauce') {
       expectedType = 'sauce';
       expectedPrice = item.extraPrice; // 0.5
+    } else if (catType === 'fruit') {
+      expectedType = 'fruit';
+      expectedPrice = item.extraPrice;
     } else {
       throw new AppError(`${item.name} no puede ser agregado como extra`, 400);
     }
@@ -184,6 +203,7 @@ export async function validatePokeItem(pokeTypeId, selections, extras = []) {
     proteins: validatedProteins,
     bases: validatedBases,
     vegetables: validatedVegetables,
+    fruits: validatedFruits,
     sauces: validatedSauces,
     toppings: validatedToppings,
     extras: validatedExtras,

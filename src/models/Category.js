@@ -7,7 +7,7 @@ const categorySchema = new mongoose.Schema(
     type: {
       type: String,
       required: true,
-      enum: ['protein', 'base', 'vegetable', 'sauce', 'topping'],
+      enum: ['protein', 'base', 'vegetable', 'fruit', 'sauce', 'topping', 'beverage', 'dessert'],
     },
     displayOrder: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },

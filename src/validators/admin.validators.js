@@ -4,7 +4,7 @@ import Joi from 'joi';
 export const createCategorySchema = Joi.object({
   name: Joi.string().trim().min(2).max(100).required(),
   slug: Joi.string().trim().lowercase().required(),
-  type: Joi.string().valid('protein', 'base', 'vegetable', 'sauce', 'topping').required(),
+  type: Joi.string().valid('protein', 'base', 'vegetable', 'fruit', 'sauce', 'topping', 'beverage', 'dessert').required(),
   displayOrder: Joi.number().integer().min(0).default(0),
   isActive: Joi.boolean().default(true),
 });
@@ -12,7 +12,7 @@ export const createCategorySchema = Joi.object({
 export const updateCategorySchema = Joi.object({
   name: Joi.string().trim().min(2).max(100),
   slug: Joi.string().trim().lowercase(),
-  type: Joi.string().valid('protein', 'base', 'vegetable', 'sauce', 'topping'),
+  type: Joi.string().valid('protein', 'base', 'vegetable', 'fruit', 'sauce', 'topping', 'beverage', 'dessert'),
   displayOrder: Joi.number().integer().min(0),
   isActive: Joi.boolean(),
 }).min(1);
@@ -32,6 +32,7 @@ export const createItemSchema = Joi.object({
   minStock: Joi.number().min(0).default(0),
   isAvailable: Joi.boolean().default(true),
   displayOrder: Joi.number().integer().min(0).default(0),
+  extraOnly: Joi.boolean().default(false),
 });
 
 export const updateItemSchema = Joi.object({
@@ -48,6 +49,7 @@ export const updateItemSchema = Joi.object({
   minStock: Joi.number().min(0),
   isAvailable: Joi.boolean(),
   displayOrder: Joi.number().integer().min(0),
+  extraOnly: Joi.boolean(),
 }).min(1);
 
 // --- Poke Types ---
@@ -59,6 +61,7 @@ export const createPokeTypeSchema = Joi.object({
     proteinGrams: Joi.number().positive().required(),
     baseGrams: Joi.number().positive().required(),
     maxVegetables: Joi.number().integer().min(0).required(),
+    maxFruits: Joi.number().integer().min(0).default(1),
     maxSauces: Joi.number().integer().min(0).required(),
     maxToppings: Joi.number().integer().min(0).required(),
   }).required(),
@@ -80,6 +83,7 @@ export const updatePokeTypeSchema = Joi.object({
     proteinGrams: Joi.number().positive(),
     baseGrams: Joi.number().positive(),
     maxVegetables: Joi.number().integer().min(0),
+    maxFruits: Joi.number().integer().min(0),
     maxSauces: Joi.number().integer().min(0),
     maxToppings: Joi.number().integer().min(0),
   }),

@@ -361,7 +361,7 @@ export async function createWalletTransaction({ type, wallet, amountUsd, amountB
     amountUsd: type !== 'bs_expense' ? amountUsd : undefined,
     amountBs: type === 'bs_expense' ? amountBs : undefined,
     description: description.trim(),
-    date: date ? new Date(date) : new Date(),
+    date: date ? new Date(`${date}T12:00:00`) : new Date(),
   });
 
   return transaction;
