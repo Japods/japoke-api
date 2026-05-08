@@ -43,10 +43,27 @@ export async function createOrder(customerData, items, paymentData = {}, deliver
     throw new AppError('El pedido debe tener al menos un poke bowl', 400);
   }
 
+  // Pre-fetch promo info so its allowedProteins puedan bypassear el tier check
+  // del pokeType (caso "promo Base con proteína premium" autorizada por admin).
+  let promoAllowedProteinIds = null;
+  let promoIndexSet = null;
+  if (promoData?.promotionId) {
+    const promo = await Promotion.findById(promoData.promotionId).lean();
+    if (promo?.allowedProteins?.length > 0) {
+      promoAllowedProteinIds = promo.allowedProteins.map((p) => p.toString());
+    }
+    if (Array.isArray(promoData.promoItemIndexes)) {
+      promoIndexSet = new Set(promoData.promoItemIndexes);
+    }
+  }
+
   // Validate each poke item
   const validatedItems = [];
-  for (const item of items) {
-    const validated = await validatePokeItem(item.pokeType, item.selections, item.extras);
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const itemIsInPromo = promoIndexSet ? promoIndexSet.has(i) : false;
+    const allowed = itemIsInPromo ? promoAllowedProteinIds : null;
+    const validated = await validatePokeItem(item.pokeType, item.selections, item.extras, { promoAllowedProteinIds: allowed });
     validatedItems.push(validated);
   }
 

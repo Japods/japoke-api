@@ -15,6 +15,7 @@ const selectionItem = Joi.object({
 const extraItem = Joi.object({
   item: objectId.required(),
   quantity: Joi.number().integer().min(1).default(1),
+  preparationStyle: Joi.string().allow(null).default(null),
 });
 
 const pokeItemSchema = Joi.object({

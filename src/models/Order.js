@@ -20,6 +20,7 @@ const extraSchema = new mongoose.Schema(
     quantity: { type: Number, default: 1 },
     unitPrice: { type: Number, required: true },
     subtotal: { type: Number, required: true },
+    preparationStyle: { type: String, default: null },
   },
   { _id: false }
 );

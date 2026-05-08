@@ -3,7 +3,8 @@ import Item from '../models/Item.js';
 import Category from '../models/Category.js';
 import { AppError } from '../utils/app-error.js';
 
-export async function validatePokeItem(pokeTypeId, selections, extras = []) {
+export async function validatePokeItem(pokeTypeId, selections, extras = [], options = {}) {
+  const { promoAllowedProteinIds = null } = options;
   // 1. Find PokeType and its rules
   const pokeType = await PokeType.findById(pokeTypeId);
   if (!pokeType || !pokeType.isActive) {
@@ -52,7 +53,10 @@ export async function validatePokeItem(pokeTypeId, selections, extras = []) {
   const validatedProteins = [];
   for (const p of selections.proteins) {
     const item = getItem(p.item, 'protein');
-    if (!allowedProteinTiers.includes(item.tier)) {
+    // Una promo con allowedProteins puede autorizar tiers que el pokeType
+    // normalmente no acepta (p.ej. "Base con Kani" como oferta especial).
+    const isAllowedByPromo = promoAllowedProteinIds?.includes(item._id.toString());
+    if (!allowedProteinTiers.includes(item.tier) && !isAllowedByPromo) {
       throw new AppError(
         `${item.name} (tier: ${item.tier}) no está permitida en poke ${pokeType.name}`,
         400
@@ -183,13 +187,18 @@ export async function validatePokeItem(pokeTypeId, selections, extras = []) {
     const subtotal = expectedPrice * qty;
     extrasTotal += subtotal;
 
+    const extraName = extra.preparationStyle && item.preparationStyles?.length
+      ? (item.preparationStyles.find((s) => s.id === extra.preparationStyle)?.label || item.name)
+      : item.name;
+
     validatedExtras.push({
       item: item._id,
-      name: item.name,
+      name: extraName,
       extraType: expectedType,
       quantity: qty,
       unitPrice: expectedPrice,
       subtotal,
+      preparationStyle: extra.preparationStyle ?? null,
     });
   }
 
