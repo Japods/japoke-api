@@ -12,6 +12,7 @@ const itemSchema = new mongoose.Schema(
     tier: { type: String, enum: ['premium', 'base', null], default: null },
     portionSize: { type: Number, default: 0 },
     extraPrice: { type: Number, default: 0 },
+    yummyPrice: { type: Number, default: null },
     costPerUnit: { type: Number, default: 0 },
     isTrackable: { type: Boolean, default: false },
     trackingUnit: {

@@ -90,12 +90,22 @@ const pokeItemSchema = new mongoose.Schema(
 const orderSchema = new mongoose.Schema(
   {
     orderNumber: { type: String, required: true, unique: true },
+    channel: {
+      type: String,
+      enum: ['direct', 'yummy'],
+      default: 'direct',
+      index: true,
+    },
+    external: {
+      orderId: { type: String, trim: true, default: '' },
+      platform: { type: String, trim: true, default: '' },
+    },
     customer: {
-      name: { type: String, required: true, trim: true },
-      identification: { type: String, required: true, trim: true },
-      email: { type: String, required: true, trim: true, lowercase: true },
-      phone: { type: String, required: true, trim: true },
-      address: { type: String, required: true, trim: true },
+      name: { type: String, trim: true, default: '' },
+      identification: { type: String, trim: true, default: '' },
+      email: { type: String, trim: true, lowercase: true, default: '' },
+      phone: { type: String, trim: true, default: '' },
+      address: { type: String, trim: true, default: '' },
       mapUrl: { type: String, trim: true, default: '' },
       notes: { type: String, trim: true, default: '' },
     },
@@ -158,6 +168,27 @@ const orderSchema = new mongoose.Schema(
       percentage: { type: Number },
       discountAmount: { type: Number },
     },
+    payout: {
+      status: {
+        type: String,
+        enum: ['pending', 'paid'],
+        default: 'pending',
+      },
+      commissionRate: { type: Number, default: 0 },
+      grossAmount: { type: Number, default: 0 },
+      commissionAmount: { type: Number, default: 0 },
+      netAmount: { type: Number, default: 0 },
+      expectedPayoutDate: { type: Date, default: null },
+      actualPayoutDate: { type: Date, default: null },
+      payoutId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'YummyPayout',
+        default: null,
+      },
+      ratesSnapshot: {
+        dolarBcv: { type: Number, default: 0 },
+      },
+    },
     deliveryTime: { type: String, default: null },
     deliveryCostBs: { type: Number, default: 0 },
     deliveryFree: { type: Boolean, default: false },
@@ -184,5 +215,6 @@ orderSchema.index({ status: 1, createdAt: -1 });
 orderSchema.index({ 'payment.method': 1, 'payment.status': 1, status: 1 });
 orderSchema.index({ 'splitPayment.method': 1, 'splitPayment.status': 1, status: 1 });
 orderSchema.index({ isCourtesy: 1, status: 1 });
+orderSchema.index({ channel: 1, 'payout.status': 1, createdAt: -1 });
 
 export default mongoose.model('Order', orderSchema);

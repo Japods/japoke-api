@@ -4,14 +4,20 @@ import Category from '../models/Category.js';
 import { AppError } from '../utils/app-error.js';
 
 export async function validatePokeItem(pokeTypeId, selections, extras = [], options = {}) {
-  const { promoAllowedProteinIds = null } = options;
+  const { promoAllowedProteinIds = null, priceMode = 'direct' } = options;
   // 1. Find PokeType and its rules
   const pokeType = await PokeType.findById(pokeTypeId);
   if (!pokeType || !pokeType.isActive) {
     throw new AppError('Tipo de poke no válido o no disponible', 400);
   }
 
-  const { rules, allowedProteinTiers, basePrice } = pokeType;
+  const { rules, allowedProteinTiers } = pokeType;
+  const basePrice =
+    priceMode === 'yummy' && pokeType.basePriceYummy != null
+      ? pokeType.basePriceYummy
+      : pokeType.basePrice;
+  const extraPriceOf = (item) =>
+    priceMode === 'yummy' && item.yummyPrice != null ? item.yummyPrice : item.extraPrice;
 
   // Load all referenced items at once
   const allItemIds = [
@@ -164,22 +170,22 @@ export async function validatePokeItem(pokeTypeId, selections, extras = [], opti
 
     if (catType === 'protein' && item.tier === 'premium') {
       expectedType = 'protein-premium';
-      expectedPrice = item.extraPrice; // 5
+      expectedPrice = extraPriceOf(item);
     } else if (catType === 'protein' && item.tier === 'base') {
       expectedType = 'protein-base';
-      expectedPrice = item.extraPrice; // 3
+      expectedPrice = extraPriceOf(item);
     } else if (catType === 'vegetable' && item.extraPrice > 0) {
       expectedType = item.slug === 'aguacate' ? 'avocado' : 'vegetable';
-      expectedPrice = item.extraPrice;
+      expectedPrice = extraPriceOf(item);
     } else if (catType === 'topping') {
       expectedType = 'topping';
-      expectedPrice = item.extraPrice; // 1
+      expectedPrice = extraPriceOf(item);
     } else if (catType === 'sauce') {
       expectedType = 'sauce';
-      expectedPrice = item.extraPrice; // 0.5
+      expectedPrice = extraPriceOf(item);
     } else if (catType === 'fruit') {
       expectedType = 'fruit';
-      expectedPrice = item.extraPrice;
+      expectedPrice = extraPriceOf(item);
     } else {
       throw new AppError(`${item.name} no puede ser agregado como extra`, 400);
     }

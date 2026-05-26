@@ -18,7 +18,7 @@ const VALID_TRANSITIONS = {
   cancelled: [],
 };
 
-async function generateOrderNumber() {
+export async function generateOrderNumber() {
   const lastOrder = await Order.findOne().sort({ createdAt: -1 }).lean();
   if (!lastOrder) return 'JAP-0001';
 
@@ -248,6 +248,13 @@ export async function createOrder(customerData, items, paymentData = {}, deliver
 export async function deleteOrder(orderId) {
   const order = await Order.findById(orderId);
   if (!order) throw new AppError('Pedido no encontrado', 404);
+
+  if (order.channel === 'yummy' && order.payout?.status === 'paid') {
+    throw new AppError(
+      'No se puede eliminar una orden Yummy ya cobrada. Eliminá el payout primero para revertir el cobro.',
+      400
+    );
+  }
 
   await restoreOrderStock(order);
   await Order.findByIdAndDelete(orderId);

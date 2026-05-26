@@ -25,6 +25,7 @@ export const createItemSchema = Joi.object({
   tier: Joi.string().valid('premium', 'base').allow(null).default(null),
   portionSize: Joi.number().min(0).default(0),
   extraPrice: Joi.number().min(0).default(0),
+  yummyPrice: Joi.number().min(0).allow(null).default(null),
   costPerUnit: Joi.number().min(0).default(0),
   isTrackable: Joi.boolean().default(false),
   trackingUnit: Joi.string().valid('g', 'kg', 'units', 'ml', 'l').default('g'),
@@ -42,6 +43,7 @@ export const updateItemSchema = Joi.object({
   tier: Joi.string().valid('premium', 'base').allow(null),
   portionSize: Joi.number().min(0),
   extraPrice: Joi.number().min(0),
+  yummyPrice: Joi.number().min(0).allow(null),
   costPerUnit: Joi.number().min(0),
   isTrackable: Joi.boolean(),
   trackingUnit: Joi.string().valid('g', 'kg', 'units', 'ml', 'l'),
@@ -57,6 +59,7 @@ export const createPokeTypeSchema = Joi.object({
   name: Joi.string().trim().min(1).max(100).required(),
   slug: Joi.string().trim().lowercase().required(),
   basePrice: Joi.number().positive().required(),
+  basePriceYummy: Joi.number().positive().allow(null).default(null),
   rules: Joi.object({
     proteinGrams: Joi.number().positive().required(),
     baseGrams: Joi.number().positive().required(),
@@ -79,6 +82,7 @@ export const updatePokeTypeSchema = Joi.object({
   name: Joi.string().trim().min(1).max(100),
   slug: Joi.string().trim().lowercase(),
   basePrice: Joi.number().positive(),
+  basePriceYummy: Joi.number().positive().allow(null),
   rules: Joi.object({
     proteinGrams: Joi.number().positive(),
     baseGrams: Joi.number().positive(),

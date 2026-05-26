@@ -5,6 +5,7 @@ const pokeTypeSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     slug: { type: String, required: true, unique: true, lowercase: true },
     basePrice: { type: Number, required: true },
+    basePriceYummy: { type: Number, default: null },
     rules: {
       proteinGrams: { type: Number, required: true },
       baseGrams: { type: Number, required: true },

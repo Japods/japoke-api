@@ -1,14 +1,16 @@
 import Order from '../models/Order.js';
 import BsProtection from '../models/BsProtection.js';
 import WalletTransaction from '../models/WalletTransaction.js';
+import YummyPayout from '../models/YummyPayout.js';
 import { getRatesSnapshot } from './exchangeRate.service.js';
 import { AppError } from '../utils/app-error.js';
 
 /**
- * Get the total Bs received from verified Pago Móvil orders (primary + split).
+ * Get the total Bs received from verified Pago Móvil orders (primary + split)
+ * and from Yummy payouts (delivery platform that pays in Bs at BCV rate).
  */
 async function getTotalBsReceived() {
-  const [primaryResult, splitResult] = await Promise.all([
+  const [primaryResult, splitResult, yummyResult] = await Promise.all([
     Order.aggregate([
       {
         $match: {
@@ -43,11 +45,27 @@ async function getTotalBsReceived() {
         },
       },
     ]),
+    YummyPayout.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalBs: { $sum: '$netAmountBs' },
+          payoutCount: { $sum: 1 },
+        },
+      },
+    ]),
   ]);
 
+  const directBs = (primaryResult[0]?.totalBs || 0) + (splitResult[0]?.totalBs || 0);
+  const directCount = (primaryResult[0]?.orderCount || 0) + (splitResult[0]?.orderCount || 0);
+  const yummyBs = yummyResult[0]?.totalBs || 0;
+  const yummyCount = yummyResult[0]?.payoutCount || 0;
+
   return {
-    totalBs: (primaryResult[0]?.totalBs || 0) + (splitResult[0]?.totalBs || 0),
-    orderCount: (primaryResult[0]?.orderCount || 0) + (splitResult[0]?.orderCount || 0),
+    totalBs: directBs + yummyBs,
+    orderCount: directCount + yummyCount,
+    fromDirect: { totalBs: directBs, orderCount: directCount },
+    fromYummy: { totalBs: yummyBs, payoutCount: yummyCount },
   };
 }
 
@@ -213,6 +231,8 @@ export async function getProtectionSummary() {
     received: {
       totalBs: bsReceived.totalBs,
       orderCount: bsReceived.orderCount,
+      fromDirect: bsReceived.fromDirect,
+      fromYummy: bsReceived.fromYummy,
     },
     protected: {
       totalBs: totalProtectedBs,
@@ -402,19 +422,20 @@ export async function getWalletTransactionHistory({ page = 1, limit = 20 } = {})
 export async function getUnifiedHistory({ page = 1, limit = 20 } = {}) {
   const skip = (page - 1) * limit;
 
-  // Count both collections
-  const [protectionCount, txCount] = await Promise.all([
+  // Count all collections
+  const [protectionCount, txCount, yummyPayoutCount] = await Promise.all([
     BsProtection.countDocuments(),
     WalletTransaction.countDocuments(),
+    YummyPayout.countDocuments(),
   ]);
-  const totalCount = protectionCount + txCount;
+  const totalCount = protectionCount + txCount + yummyPayoutCount;
   const totalPages = Math.ceil(totalCount / limit);
 
-  // Fetch both sorted by date, with enough to fill the page
-  // We use a union-like approach: fetch from both, merge, sort, slice
-  const [protections, transactions] = await Promise.all([
+  // Fetch all sorted by date, merge, sort, slice
+  const [protections, transactions, yummyPayouts] = await Promise.all([
     BsProtection.find().sort({ protectedAt: -1 }).lean(),
     WalletTransaction.find().sort({ date: -1 }).lean(),
+    YummyPayout.find().sort({ paidAt: -1 }).lean(),
   ]);
 
   const combined = [
@@ -436,6 +457,16 @@ export async function getUnifiedHistory({ page = 1, limit = 20 } = {}) {
       amountUsd: r.amountUsd,
       wallet: r.wallet,
       description: r.description,
+    })),
+    ...yummyPayouts.map((r) => ({
+      _id: r._id,
+      recordType: 'yummy_payout',
+      date: r.paidAt,
+      amountBs: r.netAmountBs,
+      amountUsd: r.netAmount,
+      orderCount: r.orderCount,
+      bankReference: r.bankReference,
+      notes: r.notes,
     })),
   ].sort((a, b) => new Date(b.date) - new Date(a.date));
 

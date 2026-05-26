@@ -10,6 +10,7 @@ import exchangeRateAdminRoutes from './exchangeRateAdmin.routes.js';
 import protectionRoutes from './protection.routes.js';
 import purchasesRoutes from './purchases.routes.js';
 import settingsRoutes from './settings.routes.js';
+import yummyRoutes from './yummy.routes.js';
 import { getStatus } from '../controllers/settings.controller.js';
 
 const router = Router();
@@ -28,5 +29,6 @@ router.use('/admin/exchange-rates', exchangeRateAdminRoutes);
 router.use('/admin/protection', protectionRoutes);
 router.use('/admin/purchases', purchasesRoutes);
 router.use('/admin/settings', settingsRoutes);
+router.use('/admin/yummy', yummyRoutes);
 
 export default router;
