@@ -466,10 +466,13 @@ export async function setCourtesy(orderId, isCourtesy, reason = '') {
 }
 
 export async function getUnpaidOrders() {
-  // Find all non-cancelled orders where primary OR split payment is still pending
+  // Find all non-cancelled orders where primary OR split payment is still pending.
+  // Yummy orders are excluded: the customer always pays Yummy at order time, so
+  // payment.status is not applicable — their collection state lives in payout.status.
   const orders = await Order.find({
     status: { $nin: ['cancelled'] },
     isCourtesy: { $ne: true },
+    channel: { $ne: 'yummy' },
     $or: [
       { 'payment.status': 'pending' },
       { 'splitPayment.method': { $exists: true, $ne: null }, 'splitPayment.status': 'pending' },
