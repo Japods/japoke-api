@@ -10,6 +10,8 @@ import {
   createPokeTypeSchema,
   updatePokeTypeSchema,
   updateOrderStatusSchema,
+  createPromotionSchema,
+  updatePromotionSchema,
 } from '../validators/admin.validators.js';
 
 const router = Router();
@@ -43,8 +45,8 @@ router.patch('/poke-types/:id', validate(updatePokeTypeSchema), adminCtrl.update
 
 // Promotions
 router.get('/promotions', adminCtrl.getPromotions);
-router.post('/promotions', adminCtrl.createPromotion);
-router.patch('/promotions/:id', adminCtrl.updatePromotion);
+router.post('/promotions', validate(createPromotionSchema), adminCtrl.createPromotion);
+router.patch('/promotions/:id', validate(updatePromotionSchema), adminCtrl.updatePromotion);
 router.delete('/promotions/:id', adminCtrl.deletePromotion);
 
 // Discount Codes

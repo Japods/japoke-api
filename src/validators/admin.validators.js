@@ -101,6 +101,40 @@ export const updatePokeTypeSchema = Joi.object({
   isActive: Joi.boolean(),
 }).min(1);
 
+// --- Promotions ---
+const promoPokeTypeEntry = Joi.object({
+  pokeType: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required(),
+  quantity: Joi.number().integer().min(1).required(),
+});
+
+export const createPromotionSchema = Joi.object({
+  name: Joi.string().trim().min(2).max(120).required(),
+  slug: Joi.string().trim().lowercase().min(2).required(),
+  description: Joi.string().trim().allow('').default(''),
+  pokeTypes: Joi.array().items(promoPokeTypeEntry).min(1).required().messages({
+    'array.min': 'La promoción debe incluir al menos un tipo de poke',
+  }),
+  allowedProteins: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)).default([]),
+  promoPrice: Joi.number().min(0).required(),
+  maxPerOrder: Joi.number().integer().min(1).default(1),
+  active: Joi.boolean().default(false),
+  displayOrder: Joi.number().integer().min(0).default(0),
+});
+
+export const updatePromotionSchema = Joi.object({
+  name: Joi.string().trim().min(2).max(120),
+  slug: Joi.string().trim().lowercase().min(2),
+  description: Joi.string().trim().allow(''),
+  pokeTypes: Joi.array().items(promoPokeTypeEntry).min(1).messages({
+    'array.min': 'La promoción debe incluir al menos un tipo de poke',
+  }),
+  allowedProteins: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)),
+  promoPrice: Joi.number().min(0),
+  maxPerOrder: Joi.number().integer().min(1),
+  active: Joi.boolean(),
+  displayOrder: Joi.number().integer().min(0),
+}).min(1);
+
 // --- Order Status ---
 export const updateOrderStatusSchema = Joi.object({
   status: Joi.string()
